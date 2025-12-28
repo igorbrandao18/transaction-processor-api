@@ -23,10 +23,6 @@ env:
   TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
   TEST_DB_USER: ${{ secrets.TEST_DB_USER }}
   TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-  TEST_DB_HOST: ${{ secrets.TEST_DB_HOST }}
-  TEST_DB_PORT: ${{ secrets.TEST_DB_PORT }}
-  TEST_REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
-  TEST_REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
   
   # PostgreSQL Default Database (for administrative operations)
   POSTGRES_DEFAULT_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
@@ -87,7 +83,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: postgres
         ports:
-          - ${{ secrets.TEST_DB_PORT }}:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -110,8 +106,8 @@ jobs:
 
       - name: 🔍 Verify PostgreSQL service
         env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGHOST: localhost
+          PGPORT: 5432
           PGUSER: ${{ secrets.TEST_DB_USER }}
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
@@ -120,7 +116,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           MAX_RETRIES=30
           RETRY_COUNT=0
-          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
+          until pg_isready -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }}; do
             RETRY_COUNT=$((RETRY_COUNT + 1))
             if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
               echo "❌ PostgreSQL service did not become ready"
@@ -134,8 +130,8 @@ jobs:
 
       - name: 🆕 Create test database
         env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGHOST: localhost
+          PGPORT: 5432
           PGUSER: ${{ secrets.TEST_DB_USER }}
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
@@ -143,19 +139,19 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🆕 Creating test database..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1 || echo "⚠️ Database may already exist (OK)"
+          psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1 || echo "⚠️ Database may already exist (OK)"
           echo "✅ Test database '$TEST_DB_NAME' created"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: ✅ Verify test database
         env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGHOST: localhost
+          PGPORT: 5432
           PGUSER: ${{ secrets.TEST_DB_USER }}
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
-          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+          if psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
             echo "✅ Test database '$TEST_DB_NAME' verified"
           else
             echo "❌ Test database '$TEST_DB_NAME' not found"
@@ -175,7 +171,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: postgres
         ports:
-          - ${{ secrets.TEST_DB_PORT }}:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -185,7 +181,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - ${{ secrets.TEST_REDIS_PORT }}:6379
+          - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -233,15 +229,15 @@ jobs:
 
       - name: 🆕 Create test database if not exists
         env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGHOST: localhost
+          PGPORT: 5432
           PGUSER: ${{ secrets.TEST_DB_USER }}
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
-          if ! psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+          if ! psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
             echo "📦 Creating test database '$TEST_DB_NAME'..."
-            psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" || echo "⚠️ Database creation failed"
+            psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" || echo "⚠️ Database creation failed"
           else
             echo "✅ Test database '$TEST_DB_NAME' already exists"
           fi
@@ -249,8 +245,8 @@ jobs:
       - name: 🔄 Run migrations
         env:
           NODE_ENV: test
-          DB_HOST: ${{ secrets.TEST_DB_HOST }}
-          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_HOST: localhost
+          DB_PORT: 5432
           DB_USER: ${{ secrets.TEST_DB_USER }}
           DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           DB_NAME: ${{ secrets.TEST_DB_NAME }}
@@ -262,13 +258,13 @@ jobs:
       - name: 🧪 Run integration tests
         env:
           NODE_ENV: test
-          DB_HOST: ${{ secrets.TEST_DB_HOST }}
-          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_HOST: localhost
+          DB_PORT: 5432
           DB_USER: ${{ secrets.TEST_DB_USER }}
           DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           DB_NAME: ${{ secrets.TEST_DB_NAME }}
-          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
-          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
         run: |
           echo "🧪 Running integration tests..."
           npm run test:integration
@@ -287,7 +283,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: postgres
         ports:
-          - ${{ secrets.TEST_DB_PORT }}:5432
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -310,14 +306,14 @@ jobs:
 
       - name: 🔍 Wait for PostgreSQL
         env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGHOST: localhost
+          PGPORT: 5432
           PGUSER: ${{ secrets.TEST_DB_USER }}
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
           MAX_RETRIES=30
           RETRY_COUNT=0
-          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
+          until pg_isready -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }}; do
             RETRY_COUNT=$((RETRY_COUNT + 1))
             if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
               echo "❌ PostgreSQL service did not become ready"
@@ -329,8 +325,8 @@ jobs:
 
       - name: 🗑️ Drop test database
         env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGHOST: localhost
+          PGPORT: 5432
           PGUSER: ${{ secrets.TEST_DB_USER }}
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
@@ -338,7 +334,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🗑️ Cleaning up test database..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" 2>&1 || echo "⚠️ Database may not exist (OK)"
+          psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" 2>&1 || echo "⚠️ Database may not exist (OK)"
           echo "✅ Test database cleanup completed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 

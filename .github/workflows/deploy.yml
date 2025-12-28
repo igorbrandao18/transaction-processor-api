@@ -130,26 +130,18 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Get repository URL
-        id: repo_url
-        run: |
-          REPO_URL=$(gh repo view --json url --jq '.url')
-          echo "url=$REPO_URL" >> $GITHUB_OUTPUT
-          echo "Repository URL: $REPO_URL"
-
-      - name: Clone repository on server
+      - name: Deploy on server
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
           SERVER_APP_DIR: ${{ secrets.SERVER_APP_DIR }}
-          REPO_URL: ${{ steps.repo_url.outputs.url }}
+          DOCKER_COMPOSE_DIR: ${{ secrets.DOCKER_COMPOSE_DIR }}
+          HEALTH_CHECK_URL: ${{ secrets.HEALTH_CHECK_URL }}
+          REPO_URL: https://github.com/${{ github.repository }}.git
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
@@ -163,42 +155,17 @@ jobs:
               mkdir -p $(dirname $SERVER_APP_DIR)
               git clone $REPO_URL $SERVER_APP_DIR
               cd $SERVER_APP_DIR
-              git checkout main
             fi
-          ENDSSH
-
-      - name: Deploy with Docker Compose
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-          SERVER_APP_DIR: ${{ secrets.SERVER_APP_DIR }}
-          DOCKER_COMPOSE_DIR: ${{ secrets.DOCKER_COMPOSE_DIR }}
-        run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST \
-            "cd $SERVER_APP_DIR/$DOCKER_COMPOSE_DIR && \
-             docker compose down || true && \
-             docker compose build --no-cache && \
-             docker compose up -d && \
-             docker compose ps && \
-             sleep 10 && \
-             docker compose logs --tail=50"
-
-      - name: Verify deployment
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-          SERVER_APP_DIR: ${{ secrets.SERVER_APP_DIR }}
-          DOCKER_COMPOSE_DIR: ${{ secrets.DOCKER_COMPOSE_DIR }}
-          HEALTH_CHECK_URL: ${{ secrets.HEALTH_CHECK_URL }}
-        run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST << 'ENDSSH'
+            
             cd $SERVER_APP_DIR/$DOCKER_COMPOSE_DIR
+            docker compose down || true
+            docker compose build --no-cache
+            docker compose up -d
+            docker compose ps
+            sleep 10
+            docker compose logs --tail=50
+            
+            echo "Verifying deployment..."
             docker compose ps
             curl -f $HEALTH_CHECK_URL || echo 'Health check failed'
           ENDSSH

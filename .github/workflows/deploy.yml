@@ -60,6 +60,7 @@ jobs:
   setup-test-database:
     name: 📦 Setup Test Database
     runs-on: ubuntu-latest
+    needs: test-unit
     
     services:
       postgres:
@@ -435,7 +436,7 @@ jobs:
   setup:
     name: 🔌 Setup and Verify SSH Connection
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, cleanup-test-database]
+    needs: cleanup-test-database
     
     steps:
       - name: 📥 Install SSH tools
@@ -665,7 +666,7 @@ jobs:
   clone-repository:
     name: 📥 Clone Repository
     runs-on: ubuntu-latest
-    needs: [setup, cleanup-old-backups]
+    needs: cleanup-old-backups
     
     steps:
       - name: 📥 Install SSH tools

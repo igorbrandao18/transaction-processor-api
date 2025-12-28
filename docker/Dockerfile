@@ -20,7 +20,7 @@ RUN npm ci
 COPY . .
 
 # Build TypeScript
-RUN npm run build
+RUN npm run build && ls -la dist/ && test -f dist/main.js || (echo "ERROR: dist/main.js not found!" && ls -la dist/ && exit 1)
 
 # Stage 3: Production
 FROM node:18-alpine AS production

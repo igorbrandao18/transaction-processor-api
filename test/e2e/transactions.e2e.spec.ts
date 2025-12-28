@@ -18,9 +18,10 @@ describe('Transactions E2E Tests', () => {
   let app: INestApplication;
   let transactionQueue: Queue;
   let processor: TransactionProcessor;
+  let moduleFixture: TestingModule;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
+    moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
@@ -38,12 +39,33 @@ describe('Transactions E2E Tests', () => {
   });
 
   afterAll(async () => {
-    await clearQueue(transactionQueue);
-    await dbPool.query(
-      'DELETE FROM transactions WHERE transaction_id LIKE $1',
-      ['e2e-%'],
-    );
-    await app.close();
+    try {
+      await clearQueue(transactionQueue);
+      await dbPool.query(
+        'DELETE FROM transactions WHERE transaction_id LIKE $1',
+        ['e2e-%'],
+      );
+    } catch {
+      // Ignore cleanup errors
+    }
+
+    try {
+      // Close queue connection first
+      if (transactionQueue && typeof transactionQueue.close === 'function') {
+        await Promise.race([
+          transactionQueue.close(),
+          new Promise((resolve) => setTimeout(resolve, 1000)),
+        ]);
+      }
+    } catch {
+      // Ignore queue close errors
+    }
+
+    try {
+      await app.close();
+    } catch {
+      // Ignore app close errors
+    }
   });
 
   describe('Complete Transaction Flow', () => {

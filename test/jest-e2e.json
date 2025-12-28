@@ -23,5 +23,6 @@
     "^@test-helpers/(.*)$": "<rootDir>/test/helpers/$1"
   },
   "setupFilesAfterEnv": ["<rootDir>/test/setup/integration-setup.ts"],
-  "testTimeout": 5000
+  "testTimeout": 5000,
+  "forceExit": true
 }

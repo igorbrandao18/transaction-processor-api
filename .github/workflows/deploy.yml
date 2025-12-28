@@ -12,7 +12,7 @@ env:
   DB_NAME: ${{ secrets.DB_NAME || 'transactions_db' }}
   DB_USER: ${{ secrets.DB_USER || 'postgres' }}
   DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
-  DOMAIN: ${{ secrets.DOMAIN }}
+  DOMAIN: ${{ secrets.DOMAIN || 'challenge.brandaodeveloper.com.br' }}
 
 jobs:
   lint:
@@ -824,13 +824,14 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔍 Verifying HTTP redirects to HTTPS..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          DOMAIN="${DOMAIN:-challenge.brandaodeveloper.com.br}"
           echo "📋 Test configuration:"
           echo "   Domain: $DOMAIN"
           echo "   Endpoint: /health"
           echo "   Expected: HTTP redirect (301 or 302) to HTTPS"
           echo ""
           echo "🔨 Testing HTTP endpoint..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$DOMAIN/health)
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$DOMAIN/health || echo "000")
           echo "   HTTP Status Code: $HTTP_STATUS"
           echo ""
           
@@ -847,6 +848,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔒 Verifying HTTPS endpoint..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          DOMAIN="${DOMAIN:-challenge.brandaodeveloper.com.br}"
           echo "📋 Test configuration:"
           echo "   Domain: $DOMAIN"
           echo "   Endpoint: /health"
@@ -854,8 +856,8 @@ jobs:
           echo "   Expected: HTTP 200 OK"
           echo ""
           echo "🔨 Testing HTTPS endpoint..."
-          HTTPS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN/health)
-          RESPONSE_TIME=$(curl -s -o /dev/null -w "%{time_total}" https://$DOMAIN/health)
+          HTTPS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN/health || echo "000")
+          RESPONSE_TIME=$(curl -s -o /dev/null -w "%{time_total}" https://$DOMAIN/health || echo "0")
           echo "   HTTPS Status Code: $HTTPS_STATUS"
           echo "   Response Time: ${RESPONSE_TIME}s"
           echo ""
@@ -874,6 +876,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Verifying health endpoint response..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          DOMAIN="${DOMAIN:-challenge.brandaodeveloper.com.br}"
           echo "📋 Test configuration:"
           echo "   Endpoint: https://$DOMAIN/health"
           echo "   Expected: JSON response with status: UP"

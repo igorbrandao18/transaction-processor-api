@@ -137,28 +137,24 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_CONNECT_TIMEOUT: ${{ secrets.SSH_CONNECT_TIMEOUT }}
+          SSH_SUCCESS_MSG: ${{ secrets.SSH_SUCCESS_MSG }}
+          SSH_COMMANDS: ${{ secrets.SSH_COMMANDS }}
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            -o ConnectTimeout=10 \
+            -o ConnectTimeout=$SSH_CONNECT_TIMEOUT \
             $SSH_USER@$SSH_HOST \
-            "echo '✅ SSH connection successful!' && \
-             echo 'Hostname:' && hostname && \
-             echo 'Uptime:' && uptime && \
-             echo 'Docker:' && (docker --version || echo 'Docker not installed') && \
-             echo 'Docker Compose:' && (docker compose version || echo 'Docker Compose not installed')"
+            "$SSH_COMMANDS"
 
       - name: Test Server Resources
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_RESOURCE_COMMANDS: ${{ secrets.SSH_RESOURCE_COMMANDS }}
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             $SSH_USER@$SSH_HOST \
-            "echo '📊 Server Resources:' && \
-             echo 'Memory:' && free -h && \
-             echo 'Disk:' && df -h / && \
-             echo 'CPU Cores:' && nproc && \
-             echo 'Running containers:' && (docker ps 2>/dev/null || echo 'Docker not running')"
+            "$SSH_RESOURCE_COMMANDS"

@@ -50,29 +50,29 @@ jobs:
           DB_USER: ${{ secrets.DB_USER || 'postgres' }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
         run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $SSH_USER@$SSH_HOST << ENDSSH
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' bash -s" << 'ENDSSH'
             echo "Checking if PostgreSQL container is running..."
             if docker ps --format '{{.Names}}' | grep -q 'transaction-db'; then
               echo "PostgreSQL container is running. Creating backup..."
               
               BACKUP_DIR="/tmp/backups"
-              mkdir -p \$BACKUP_DIR
-              TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
-              BACKUP_FILE="\$BACKUP_DIR/\${DB_NAME}_\${TIMESTAMP}.sql"
+              mkdir -p "$BACKUP_DIR"
+              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+              BACKUP_FILE="$BACKUP_DIR/${DB_NAME}_${TIMESTAMP}.sql"
               
-              echo "Creating database dump..."
-              docker exec transaction-db pg_dump -U \$DB_USER -d \$DB_NAME > \$BACKUP_FILE || {
+              echo "Creating database dump for database: $DB_NAME"
+              docker exec transaction-db pg_dump -U "$DB_USER" -d "$DB_NAME" > "$BACKUP_FILE" || {
                 echo "Failed to create backup, but continuing..."
                 exit 0
               }
               
-              if [ -f \$BACKUP_FILE ] && [ -s \$BACKUP_FILE ]; then
-                echo "✅ Backup created successfully: \$BACKUP_FILE"
-                ls -lh \$BACKUP_FILE
+              if [ -f "$BACKUP_FILE" ] && [ -s "$BACKUP_FILE" ]; then
+                echo "✅ Backup created successfully: $BACKUP_FILE"
+                ls -lh "$BACKUP_FILE"
                 
                 echo "Keeping only last 5 backups..."
-                cd \$BACKUP_DIR
-                ls -t \${DB_NAME}_*.sql | tail -n +6 | xargs rm -f || true
+                cd "$BACKUP_DIR"
+                ls -t "${DB_NAME}"_*.sql 2>/dev/null | tail -n +6 | xargs rm -f || true
               else
                 echo "⚠️ Backup file is empty or does not exist"
               fi
@@ -90,7 +90,7 @@ jobs:
           DB_USER: ${{ secrets.DB_USER || 'postgres' }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
         run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $SSH_USER@$SSH_HOST << ENDSSH
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD='$DB_PASSWORD' bash -s" << 'ENDSSH'
             cd /tmp/transaction-processor-api/docker
             
             echo "Configuring Docker BuildKit for cache..."
@@ -119,28 +119,28 @@ jobs:
             echo "Waiting for PostgreSQL to be ready..."
             timeout=60
             elapsed=0
-            while [ \$elapsed -lt \$timeout ]; do
-              if docker exec transaction-db pg_isready -U \$DB_USER > /dev/null 2>&1; then
+            while [ $elapsed -lt $timeout ]; do
+              if docker exec transaction-db pg_isready -U "$DB_USER" > /dev/null 2>&1; then
                 echo "✅ PostgreSQL is ready"
                 break
               fi
-              echo "Waiting for PostgreSQL... (\$elapsed/\$timeout seconds)"
+              echo "Waiting for PostgreSQL... ($elapsed/$timeout seconds)"
               sleep 2
-              elapsed=\$((elapsed + 2))
+              elapsed=$((elapsed + 2))
             done
             
             echo "Restoring database backup if available..."
             BACKUP_DIR="/tmp/backups"
-            LATEST_BACKUP=\$(ls -t \$BACKUP_DIR/\${DB_NAME}_*.sql 2>/dev/null | head -1)
+            LATEST_BACKUP=$(ls -t "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -1)
             
-            if [ -n "\$LATEST_BACKUP" ] && [ -f "\$LATEST_BACKUP" ]; then
-              echo "Found backup: \$LATEST_BACKUP"
+            if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
+              echo "Found backup: $LATEST_BACKUP"
               echo "Restoring database..."
               
-              docker exec -i transaction-db psql -U \$DB_USER -d postgres -c "DROP DATABASE IF EXISTS \$DB_NAME;" || true
-              docker exec -i transaction-db psql -U \$DB_USER -d postgres -c "CREATE DATABASE \$DB_NAME;" || true
+              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" || true
+              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME;" || true
               
-              cat \$LATEST_BACKUP | docker exec -i transaction-db psql -U \$DB_USER -d \$DB_NAME && {
+              cat "$LATEST_BACKUP" | docker exec -i transaction-db psql -U "$DB_USER" -d "$DB_NAME" && {
                 echo "✅ Database restored successfully from backup"
               } || {
                 echo "⚠️ Failed to restore backup, database will be empty"
@@ -152,14 +152,14 @@ jobs:
             echo "Waiting for application container to be ready..."
             timeout=60
             elapsed=0
-            while [ \$elapsed -lt \$timeout ]; do
+            while [ $elapsed -lt $timeout ]; do
               if docker ps --format '{{.Names}}' | grep -q 'transaction-api' && docker exec transaction-api node -e "console.log('OK')" > /dev/null 2>&1; then
                 echo "✅ Application container is ready"
                 break
               fi
-              echo "Waiting for application... (\$elapsed/\$timeout seconds)"
+              echo "Waiting for application... ($elapsed/$timeout seconds)"
               sleep 2
-              elapsed=\$((elapsed + 2))
+              elapsed=$((elapsed + 2))
             done
             
             echo "Running database migrations..."

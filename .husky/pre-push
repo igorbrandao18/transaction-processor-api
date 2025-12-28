@@ -4,46 +4,9 @@
 echo "🔍 Running lint..."
 npm run lint:check
 
-echo "🔧 Starting test database containers..."
-cd docker
-docker compose --profile test up -d postgres-test redis-test
-cd ..
+echo "🧪 Running unit tests (fast feedback)..."
+npm run test:unit
 
-echo "⏳ Waiting for PostgreSQL to be ready..."
-until docker exec transaction-db-test pg_isready -U postgres > /dev/null 2>&1; do
-  echo "Waiting for PostgreSQL..."
-  sleep 2
-done
-
-echo "🗑️ Dropping and recreating test database..."
-docker exec transaction-db-test psql -U postgres -c "DROP DATABASE IF EXISTS transactions_db_test;" || true
-docker exec transaction-db-test psql -U postgres -c "CREATE DATABASE transactions_db_test;" || true
-
-echo "🔄 Running migrations..."
-NODE_ENV=test \
-DB_HOST=localhost \
-DB_PORT=5433 \
-DB_USER=postgres \
-DB_PASSWORD=postgres \
-DB_NAME=transactions_db_test \
-REDIS_HOST=localhost \
-REDIS_PORT=6380 \
-npm run migrate
-
-echo "🧪 Running all tests..."
-NODE_ENV=test \
-DB_HOST=localhost \
-DB_PORT=5433 \
-DB_USER=postgres \
-DB_PASSWORD=postgres \
-DB_NAME=transactions_db_test \
-REDIS_HOST=localhost \
-REDIS_PORT=6380 \
-npm run test:all
-
-echo "🧹 Stopping test containers..."
-cd docker
-docker compose --profile test stop postgres-test redis-test
-docker compose --profile test rm -f postgres-test redis-test
-cd ..
+echo "✅ Pre-push checks passed!"
+echo "ℹ️  Integration and E2E tests will run in CI/CD pipeline"
 

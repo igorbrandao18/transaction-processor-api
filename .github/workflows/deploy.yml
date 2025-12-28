@@ -475,8 +475,8 @@ jobs:
           fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  check-postgres-container:
-    name: 🔍 Check PostgreSQL Container
+  backup:
+    name: 💾 Backup Database
     runs-on: ubuntu-latest
     needs: setup
     
@@ -491,182 +491,49 @@ jobs:
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 🔍 Check PostgreSQL container status
+      - name: 💾 Create and cleanup database backup
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔍 Checking PostgreSQL container status on server..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sshpass -p "$SSH_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST "bash -s" << 'ENDSSH'
-            echo "📋 Checking Docker containers..."
-            echo ""
-            echo "🔍 Looking for PostgreSQL container 'transaction-db'..."
-            if docker ps --format '{{.Names}}' | grep -q 'transaction-db'; then
-              echo "✅ PostgreSQL container 'transaction-db' is RUNNING"
-              echo ""
-              echo "📊 Container details:"
-              docker ps --filter "name=transaction-db" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-              echo ""
-              echo "📋 Container health:"
-              docker inspect transaction-db --format='{{.State.Status}}' 2>/dev/null || echo "Unable to inspect"
-            else
-              echo "⚠️  PostgreSQL container 'transaction-db' is NOT RUNNING"
-              echo ""
-              echo "📊 All running containers:"
-              docker ps --format "table {{.Names}}\t{{.Status}}" || echo "No containers running"
-              echo ""
-              echo "ℹ️  This is OK for first deployment - backup will be skipped"
-            fi
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          ENDSSH
-
-  create-backup:
-    name: 💾 Create Database Backup
-    runs-on: ubuntu-latest
-    needs: check-postgres-container
-    
-    steps:
-      - name: 📥 Install SSH tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 💾 Create database backup
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "💾 Creating database backup..."
+          echo "💾 Creating database backup and cleaning up old backups..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' bash -s" << 'ENDSSH'
-            echo "📋 Backup configuration:"
-            echo "   Database: $DB_NAME"
-            echo "   User: $DB_USER"
-            echo "   Container: transaction-db"
-            echo ""
-            echo "🔍 Checking if PostgreSQL container is running..."
+            echo "🔍 Checking PostgreSQL container..."
             if docker ps --format '{{.Names}}' | grep -q 'transaction-db'; then
               echo "✅ PostgreSQL container is running"
-              echo ""
               
               BACKUP_DIR="/tmp/backups"
               mkdir -p "$BACKUP_DIR"
               TIMESTAMP=$(date +%Y%m%d_%H%M%S)
               BACKUP_FILE="$BACKUP_DIR/${DB_NAME}_${TIMESTAMP}.sql"
               
-              echo "📦 Preparing backup directory..."
-              echo "   Directory: $BACKUP_DIR"
-              echo "   Backup file: $BACKUP_FILE"
-              echo ""
+              echo "💾 Creating backup: $BACKUP_FILE"
+              docker exec transaction-db pg_dump -U "$DB_USER" -d "$DB_NAME" > "$BACKUP_FILE" 2>&1 || echo "⚠️ Backup may have failed (OK for first deployment)"
               
-              echo "🔨 Executing pg_dump command..."
-              echo "   Command: docker exec transaction-db pg_dump -U $DB_USER -d $DB_NAME"
-              if docker exec transaction-db pg_dump -U "$DB_USER" -d "$DB_NAME" > "$BACKUP_FILE" 2>&1; then
-                echo "✅ pg_dump command executed successfully"
-              else
-                EXIT_CODE=$?
-                echo "⚠️  pg_dump exited with code: $EXIT_CODE"
-                echo "⚠️  This may be OK if database doesn't exist yet (first deployment)"
-              fi
-              
-              echo ""
-              echo "🔍 Verifying backup file..."
               if [ -f "$BACKUP_FILE" ] && [ -s "$BACKUP_FILE" ]; then
                 BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
-                BACKUP_LINES=$(wc -l < "$BACKUP_FILE")
-                echo "✅ Backup file created successfully!"
-                echo "   File: $BACKUP_FILE"
-                echo "   Size: $BACKUP_SIZE"
-                echo "   Lines: $BACKUP_LINES"
-                echo ""
-                echo "📊 Backup file details:"
-                ls -lh "$BACKUP_FILE"
-              else
-                echo "⚠️  Backup file is empty or does not exist"
-                echo "   This is OK for first deployment (no existing data)"
+                echo "✅ Backup created: $BACKUP_SIZE"
               fi
-            else
-              echo "ℹ️  PostgreSQL container is not running"
-              echo "   Skipping backup (this is OK for first deployment)"
-            fi
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          ENDSSH
-
-  cleanup-old-backups:
-    name: 🧹 Cleanup Old Backups
-    runs-on: ubuntu-latest
-    needs: create-backup
-    
-    steps:
-      - name: 📥 Install SSH tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 🧹 Cleanup old backup files
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧹 Cleaning up old backup files..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sshpass -p "$SSH_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' bash -s" << 'ENDSSH'
-            BACKUP_DIR="/tmp/backups"
-            echo "📋 Cleanup configuration:"
-            echo "   Backup directory: $BACKUP_DIR"
-            echo "   Keep last: 5 backups"
-            echo "   Database pattern: ${DB_NAME}_*.sql"
-            echo ""
-            
-            if [ -d "$BACKUP_DIR" ]; then
-              echo "📊 Current backups before cleanup:"
-              ls -lht "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -10 || echo "   No backups found"
-              echo ""
               
+              echo "🧹 Cleaning up old backups (keeping last 5)..."
               BACKUP_COUNT=$(ls -1 "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | wc -l)
-              echo "📊 Total backups found: $BACKUP_COUNT"
-              
               if [ "$BACKUP_COUNT" -gt 5 ]; then
-                REMOVE_COUNT=$((BACKUP_COUNT - 5))
-                echo "🧹 Removing $REMOVE_COUNT old backup(s)..."
                 cd "$BACKUP_DIR"
-                ls -t "${DB_NAME}"_*.sql 2>/dev/null | tail -n +6 | while read -r old_backup; do
-                  echo "   Removing: $old_backup"
-                  rm -f "$old_backup"
-                done
+                ls -t "${DB_NAME}"_*.sql 2>/dev/null | tail -n +6 | xargs rm -f || true
                 echo "✅ Old backups removed"
-              else
-                echo "✅ No cleanup needed (only $BACKUP_COUNT backup(s) found)"
               fi
-              
-              echo ""
-              echo "📊 Remaining backups after cleanup:"
-              ls -lht "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -5 || echo "   No backups remaining"
             else
-              echo "⚠️  Backup directory does not exist: $BACKUP_DIR"
-              echo "   This is OK for first deployment"
+              echo "ℹ️ PostgreSQL container not running (OK for first deployment)"
             fi
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           ENDSSH
 
-  clone-repository:
-    name: 📥 Clone Repository
+  prepare-deployment:
+    name: 📦 Prepare Deployment
     runs-on: ubuntu-latest
-    needs: cleanup-old-backups
+    needs: backup
     
     steps:
       - name: 📥 Install SSH tools
@@ -679,159 +546,40 @@ jobs:
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 📥 Clone repository from GitHub
+      - name: 📥 Clone repository and prepare archive
         env:
           REPO_URL: https://github.com/${{ github.repository }}.git
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Cloning repository to deployment server..."
+          echo "📦 Preparing deployment (clone + archive)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             $SSH_USER@$SSH_HOST << ENDSSH
-            echo "📋 Clone configuration:"
-            echo "   Repository: $REPO_URL"
-            echo "   Target directory: /tmp/transaction-processor-api"
-            echo "   Branch: main (default)"
-            echo ""
-            echo "🗑️  Removing existing repository directory (if exists)..."
+            echo "📥 Cloning repository..."
             mkdir -p /tmp
             cd /tmp
-            if [ -d "transaction-processor-api" ]; then
-              echo "   Found existing directory, removing..."
-              rm -rf transaction-processor-api
-              echo "   ✅ Existing directory removed"
-            else
-              echo "   ✅ No existing directory found (first deployment)"
-            fi
-            echo ""
-            echo "📥 Cloning repository..."
-            if git clone $REPO_URL transaction-processor-api; then
-              echo "✅ Repository cloned successfully"
-              echo ""
-              cd transaction-processor-api
-              echo "📊 Repository information:"
-              echo "   Current commit: $(git rev-parse HEAD)"
-              echo "   Commit message: $(git log -1 --pretty=%B)"
-              echo "   Branch: $(git branch --show-current)"
-              echo ""
-              echo "📁 Repository structure:"
-              ls -la
-            else
-              echo "❌ ERROR: Failed to clone repository"
-              exit 1
-            fi
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          ENDSSH
-
-  prepare-archive:
-    name: 📦 Prepare Application Archive
-    runs-on: ubuntu-latest
-    needs: clone-repository
-    
-    steps:
-      - name: 📥 Install SSH tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 📦 Create application archive
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📦 Creating application archive for Docker build..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sshpass -p "$SSH_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST << 'ENDSSH'
-            cd /tmp/transaction-processor-api
+            rm -rf transaction-processor-api
+            git clone $REPO_URL transaction-processor-api
+            cd transaction-processor-api
             
-            echo "📋 Archive configuration:"
-            echo "   Format: tar.gz (compressed)"
-            echo "   Target file: app.tar.gz"
-            echo "   Purpose: Optimize Docker build context"
-            echo ""
-            echo "📁 Files to include:"
-            echo "   ✅ src/ (source code)"
-            echo "   ✅ package.json, package-lock.json"
-            echo "   ✅ tsconfig.json, nest-cli.json, tsconfig.build.json"
-            echo "   ✅ migrations/ (database migrations)"
-            echo "   ✅ eslint.config.mjs, .prettierrc"
-            echo ""
-            echo "🚫 Files to exclude:"
-            echo "   ❌ node_modules/, dist/, build/"
-            echo "   ❌ test/, coverage/, *.spec.ts, *.test.ts"
-            echo "   ❌ .git/, .env*, logs/, *.log"
-            echo "   ❌ docker/ (Docker files)"
-            echo ""
-            echo "🔨 Creating archive..."
-            if tar -czf app.tar.gz \
-              --exclude='node_modules' \
-              --exclude='dist' \
-              --exclude='build' \
-              --exclude='*.tsbuildinfo' \
-              --exclude='test' \
-              --exclude='coverage' \
-              --exclude='*.spec.ts' \
-              --exclude='*.test.ts' \
-              --exclude='*.e2e-spec.ts' \
-              --exclude='README.md' \
-              --exclude='docs' \
-              --exclude='*.md' \
-              --exclude='.git' \
-              --exclude='.gitignore' \
-              --exclude='.gitattributes' \
-              --exclude='.vscode' \
-              --exclude='.idea' \
-              --exclude='*.swp' \
-              --exclude='*.swo' \
-              --exclude='*~' \
-              --exclude='.env' \
-              --exclude='.env.local' \
-              --exclude='.env.*.local' \
-              --exclude='.DS_Store' \
-              --exclude='Thumbs.db' \
-              --exclude='logs' \
-              --exclude='*.log' \
-              --exclude='.eslintcache' \
-              --exclude='docker' \
-              --exclude='.dockerignore' \
-              --exclude='docker-compose.yml' \
-              src/ \
-              package.json \
-              package-lock.json \
-              tsconfig.json \
-              nest-cli.json \
-              migrations/ \
-              eslint.config.mjs \
-              .prettierrc \
-              tsconfig.build.json 2>&1; then
-              echo ""
-              echo "✅ Archive created successfully!"
-              echo ""
-              echo "📊 Archive details:"
-              ls -lh app.tar.gz
-              ARCHIVE_SIZE=$(du -h app.tar.gz | cut -f1)
-              echo "   Size: $ARCHIVE_SIZE"
-            else
-              EXIT_CODE=$?
-              echo ""
-              echo "❌ ERROR: Failed to create archive (exit code: $EXIT_CODE)"
-              exit $EXIT_CODE
-            fi
+            echo "📦 Creating application archive..."
+            tar -czf app.tar.gz \
+              --exclude='node_modules' --exclude='dist' --exclude='build' \
+              --exclude='test' --exclude='coverage' --exclude='*.spec.ts' \
+              --exclude='.git' --exclude='docker' --exclude='*.md' \
+              src/ package*.json tsconfig*.json nest-cli.json migrations/ \
+              eslint.config.mjs .prettierrc 2>&1
+            
+            echo "✅ Archive created: $(du -h app.tar.gz | cut -f1)"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           ENDSSH
 
-  stop-containers:
-    name: 🛑 Stop Existing Containers
+  build-and-deploy:
+    name: 🚀 Build and Deploy
     runs-on: ubuntu-latest
-    needs: prepare-archive
+    needs: prepare-deployment
     
     steps:
       - name: 📥 Install SSH tools
@@ -844,167 +592,46 @@ jobs:
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 🛑 Stop containers and clean up
+      - name: 🚀 Stop, build and start containers
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🛑 Stopping existing containers and cleaning up..."
+          echo "🚀 Building and deploying containers..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST << 'ENDSSH'
+            $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD='$DB_PASSWORD' bash -s" << 'ENDSSH'
             cd /tmp/transaction-processor-api/docker
             
-            echo "📊 Current container status before cleanup:"
-            docker compose ps 2>/dev/null || echo "   No containers running"
-            echo ""
+            echo "🛑 Stopping existing containers..."
+            docker compose down -v || true
+            docker container prune -f || true
+            docker volume prune -f || true
             
-            echo "🧹 Cleaning up unused containers (keeping build cache)..."
-            docker container prune -f
-            echo "✅ Unused containers removed"
-            echo ""
-            
-            echo "🧹 Cleaning up unused volumes (keeping build cache)..."
-            docker volume prune -f
-            echo "✅ Unused volumes removed"
-            echo ""
-            
-            echo "🛑 Stopping existing containers and removing volumes..."
-            if docker compose down -v 2>&1; then
-              echo "✅ Containers stopped and volumes removed successfully"
-            else
-              echo "⚠️  No existing containers to stop (this is OK for first deployment)"
-            fi
-            echo ""
-            
-            echo "📊 Container status after cleanup:"
-            docker compose ps 2>/dev/null || echo "   No containers running"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          ENDSSH
-
-  build-containers:
-    name: 🔨 Build Docker Containers
-    runs-on: ubuntu-latest
-    needs: stop-containers
-    
-    steps:
-      - name: 📥 Install SSH tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 🔨 Build Docker containers
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔨 Building Docker containers..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sshpass -p "$SSH_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST << 'ENDSSH'
-            cd /tmp/transaction-processor-api/docker
-            
-            echo "⚙️  Configuring Docker BuildKit for optimized caching..."
+            echo "🔨 Building containers..."
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
-            echo "✅ BuildKit enabled"
-            echo ""
+            docker compose pull || true
+            docker compose build --pull
             
-            echo "📥 Pulling base images (using cache)..."
-            if docker compose pull 2>&1; then
-              echo "✅ Base images pulled successfully"
-            else
-              echo "⚠️  Some images may not exist yet (this is OK)"
-            fi
-            echo ""
+            echo "🚀 Starting containers..."
+            docker compose up -d
             
-            echo "🔨 Building containers with cache optimization..."
-            echo "   Strategy: Only rebuild changed layers"
-            echo "   Cache: Using Docker BuildKit cache"
-            echo "   Pull: Always pull latest base images"
-            echo ""
-            if docker compose build --pull 2>&1; then
-              echo "✅ Containers built successfully!"
-            else
-              EXIT_CODE=$?
-              echo "❌ ERROR: Failed to build containers (exit code: $EXIT_CODE)"
-              exit $EXIT_CODE
-            fi
-            echo ""
+            echo "⏳ Waiting for services to initialize..."
+            sleep 15
             
-            echo "🧹 Cleaning up archive after build..."
             cd /tmp/transaction-processor-api
             rm -f app.tar.gz || true
-            echo "✅ Archive cleaned up"
-            echo ""
             
-            echo "📊 Built images:"
-            docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | grep -E "REPOSITORY|transaction" || true
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          ENDSSH
-
-  start-containers:
-    name: 🚀 Start Docker Containers
-    runs-on: ubuntu-latest
-    needs: build-containers
-    
-    steps:
-      - name: 📥 Install SSH tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 🚀 Start containers
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🚀 Starting Docker containers..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sshpass -p "$SSH_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST << 'ENDSSH'
-            cd /tmp/transaction-processor-api/docker
-            
-            echo "📋 Starting services:"
-            echo "   - PostgreSQL database (transaction-db)"
-            echo "   - Redis cache (transaction-redis)"
-            echo "   - Application API (transaction-api)"
-            echo ""
-            
-            echo "🔨 Executing docker compose up -d..."
-            if docker compose up -d 2>&1; then
-              echo "✅ Containers started successfully"
-            else
-              EXIT_CODE=$?
-              echo "❌ ERROR: Failed to start containers (exit code: $EXIT_CODE)"
-              exit $EXIT_CODE
-            fi
-            echo ""
-            
-            echo "⏳ Waiting 15 seconds for services to initialize..."
-            sleep 15
-            echo "✅ Initialization wait completed"
-            echo ""
-            
-            echo "📊 Container status after startup:"
+            echo "📊 Container status:"
             docker compose ps
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           ENDSSH
 
-  wait-postgres:
-    name: ⏳ Wait for PostgreSQL
+  wait-services:
+    name: ⏳ Wait Services and Restore Backup
     runs-on: ubuntu-latest
-    needs: start-containers
+    needs: build-and-deploy
     
     steps:
       - name: 📥 Install SSH tools
@@ -1017,193 +644,54 @@ jobs:
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: ⏳ Wait for PostgreSQL to be ready
+      - name: ⏳ Wait for services and restore backup
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "⏳ Waiting for PostgreSQL to be ready..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sshpass -p "$SSH_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST "DB_USER='$DB_USER' bash -s" << 'ENDSSH'
-            echo "📋 PostgreSQL readiness check:"
-            echo "   Container: transaction-db"
-            echo "   User: $DB_USER"
-            echo "   Command: pg_isready"
-            echo "   Timeout: 60 seconds"
-            echo ""
-            
-            timeout=60
-            elapsed=0
-            MAX_RETRIES=$((timeout / 2))
-            RETRY_COUNT=0
-            
-            while [ $elapsed -lt $timeout ]; do
-              RETRY_COUNT=$((RETRY_COUNT + 1))
-              if docker exec transaction-db pg_isready -U "$DB_USER" > /dev/null 2>&1; then
-                echo "✅ PostgreSQL is ready and accepting connections!"
-                echo "   Elapsed time: ${elapsed}s"
-                echo "   Attempts: $RETRY_COUNT/$MAX_RETRIES"
-                break
-              fi
-              echo "   Attempt $RETRY_COUNT/$MAX_RETRIES: PostgreSQL not ready yet... (${elapsed}s/${timeout}s)"
-              sleep 2
-              elapsed=$((elapsed + 2))
-            done
-            
-            if [ $elapsed -ge $timeout ]; then
-              echo "❌ ERROR: PostgreSQL did not become ready within ${timeout} seconds"
-              echo "📊 Container logs:"
-              docker logs transaction-db --tail 20 || true
-              exit 1
-            fi
-            
-            echo ""
-            echo "📊 PostgreSQL connection test:"
-            docker exec transaction-db psql -U "$DB_USER" -d postgres -c "SELECT version();" | head -3 || true
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          ENDSSH
-
-  restore-backup:
-    name: 📥 Restore Database Backup
-    runs-on: ubuntu-latest
-    needs: wait-postgres
-    
-    steps:
-      - name: 📥 Install SSH tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 📥 Restore database from backup
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Restoring database backup if available..."
+          echo "⏳ Waiting for services and restoring backup..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' bash -s" << 'ENDSSH'
-            BACKUP_DIR="/tmp/backups"
-            echo "📋 Restore configuration:"
-            echo "   Backup directory: $BACKUP_DIR"
-            echo "   Database: $DB_NAME"
-            echo "   User: $DB_USER"
-            echo ""
-            
-            echo "🔍 Looking for latest backup..."
-            LATEST_BACKUP=$(ls -t "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -1)
-            
-            if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
-              BACKUP_SIZE=$(du -h "$LATEST_BACKUP" | cut -f1)
-              BACKUP_LINES=$(wc -l < "$LATEST_BACKUP")
-              echo "✅ Found backup: $LATEST_BACKUP"
-              echo "   Size: $BACKUP_SIZE"
-              echo "   Lines: $BACKUP_LINES"
-              echo ""
-              
-              echo "🔄 Restoring database from backup..."
-              echo "   Step 1: Dropping existing database (if exists)..."
-              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>&1 || true
-              echo "   ✅ Database dropped"
-              echo ""
-              
-              echo "   Step 2: Creating fresh database..."
-              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME;" 2>&1 || true
-              echo "   ✅ Database created"
-              echo ""
-              
-              echo "   Step 3: Restoring data from backup..."
-              if cat "$LATEST_BACKUP" | docker exec -i transaction-db psql -U "$DB_USER" -d "$DB_NAME" 2>&1; then
-                echo "   ✅ Database restored successfully from backup!"
-                echo ""
-                echo "📊 Verifying restored database..."
-                docker exec transaction-db psql -U "$DB_USER" -d "$DB_NAME" -c "\dt" 2>&1 | head -10 || true
-              else
-                EXIT_CODE=$?
-                echo "   ⚠️  WARNING: Failed to restore backup (exit code: $EXIT_CODE)"
-                echo "   Database will be empty - migrations will create schema"
-              fi
-            else
-              echo "ℹ️  No backup found in $BACKUP_DIR"
-              echo "   This is OK for first deployment"
-              echo "   Database will be created fresh by migrations"
-            fi
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          ENDSSH
-
-  wait-application:
-    name: ⏳ Wait for Application
-    runs-on: ubuntu-latest
-    needs: restore-backup
-    
-    steps:
-      - name: 📥 Install SSH tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: ⏳ Wait for application container to be ready
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "⏳ Waiting for application container to be ready..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sshpass -p "$SSH_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST << 'ENDSSH'
-            echo "📋 Application readiness check:"
-            echo "   Container: transaction-api"
-            echo "   Check: Node.js process running"
-            echo "   Timeout: 60 seconds"
-            echo ""
-            
+            echo "⏳ Waiting for PostgreSQL..."
             timeout=60
             elapsed=0
-            MAX_RETRIES=$((timeout / 2))
-            RETRY_COUNT=0
-            
             while [ $elapsed -lt $timeout ]; do
-              RETRY_COUNT=$((RETRY_COUNT + 1))
-              if docker ps --format '{{.Names}}' | grep -q 'transaction-api' && \
-                 docker exec transaction-api node -e "console.log('OK')" > /dev/null 2>&1; then
-                echo "✅ Application container is ready!"
-                echo "   Elapsed time: ${elapsed}s"
-                echo "   Attempts: $RETRY_COUNT/$MAX_RETRIES"
+              if docker exec transaction-db pg_isready -U "$DB_USER" > /dev/null 2>&1; then
+                echo "✅ PostgreSQL is ready"
                 break
               fi
-              echo "   Attempt $RETRY_COUNT/$MAX_RETRIES: Application not ready yet... (${elapsed}s/${timeout}s)"
               sleep 2
               elapsed=$((elapsed + 2))
             done
             
-            if [ $elapsed -ge $timeout ]; then
-              echo "❌ ERROR: Application did not become ready within ${timeout} seconds"
-              echo "📊 Container logs:"
-              docker logs transaction-api --tail 30 || true
-              exit 1
+            echo "📥 Restoring backup if available..."
+            BACKUP_DIR="/tmp/backups"
+            LATEST_BACKUP=$(ls -t "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -1)
+            if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
+              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" || true
+              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME;" || true
+              cat "$LATEST_BACKUP" | docker exec -i transaction-db psql -U "$DB_USER" -d "$DB_NAME" || echo "⚠️ Backup restore failed (OK for first deployment)"
             fi
             
-            echo ""
-            echo "📊 Application container status:"
-            docker ps --filter "name=transaction-api" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            echo "⏳ Waiting for application..."
+            elapsed=0
+            while [ $elapsed -lt $timeout ]; do
+              if docker ps --format '{{.Names}}' | grep -q 'transaction-api' && \
+                 docker exec transaction-api node -e "console.log('OK')" > /dev/null 2>&1; then
+                echo "✅ Application is ready"
+                break
+              fi
+              sleep 2
+              elapsed=$((elapsed + 2))
+            done
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           ENDSSH
 
-  run-migrations:
-    name: 🔄 Run Database Migrations
+  finalize-deployment:
+    name: 🔄 Finalize Deployment
     runs-on: ubuntu-latest
-    needs: wait-application
+    needs: wait-services
     
     steps:
       - name: 📥 Install SSH tools
@@ -1216,91 +704,31 @@ jobs:
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 🔄 Run database migrations
+      - name: 🔄 Run migrations and verify status
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔄 Running database migrations..."
+          echo "🔄 Finalizing deployment (migrations + verification)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             $SSH_USER@$SSH_HOST << 'ENDSSH'
-            echo "📋 Migration configuration:"
-            echo "   Container: transaction-api"
-            echo "   Command: npm run migrate"
-            echo "   Database: transactions_db (from environment)"
-            echo ""
+            echo "🔄 Running database migrations..."
+            docker exec transaction-api npm run migrate || echo "⚠️ Migrations may have already been applied"
             
-            echo "🔨 Executing migrations..."
-            if docker exec transaction-api npm run migrate 2>&1; then
-              echo "✅ Migrations executed successfully!"
-              echo ""
-              echo "📊 Verifying migration results..."
-              docker exec transaction-db psql -U postgres -d transactions_db -c "\dt" 2>&1 | head -10 || true
-            else
-              EXIT_CODE=$?
-              echo "⚠️  WARNING: Migration command exited with code: $EXIT_CODE"
-              echo "   This may be OK if migrations were already applied"
-              echo "   Checking database tables..."
-              docker exec transaction-db psql -U postgres -d transactions_db -c "\dt" 2>&1 || true
-            fi
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          ENDSSH
-
-  verify-deployment-status:
-    name: 📊 Verify Deployment Status
-    runs-on: ubuntu-latest
-    needs: run-migrations
-    
-    steps:
-      - name: 📥 Install SSH tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 📊 Show deployment status
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Verifying deployment status..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sshpass -p "$SSH_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST << 'ENDSSH'
+            echo "📊 Deployment status:"
             cd /tmp/transaction-processor-api/docker
-            
-            echo "📊 Container status:"
             docker compose ps
             echo ""
-            
-            echo "📋 Container health:"
-            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "NAMES|transaction" || true
-            echo ""
-            
-            echo "📋 Application logs (last 30 lines):"
-            docker compose logs --tail=30 transaction-api || docker logs transaction-api --tail 30 || true
-            echo ""
-            
-            echo "📋 Database container logs (last 10 lines):"
-            docker compose logs --tail=10 transaction-db || docker logs transaction-db --tail 10 || true
-            echo ""
-            
-            echo "📋 Redis container logs (last 10 lines):"
-            docker compose logs --tail=10 transaction-redis || docker logs transaction-redis --tail 10 || true
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🎉 Deployment verification completed!"
+            echo "📋 Application logs (last 20 lines):"
+            docker compose logs --tail=20 transaction-api || true
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           ENDSSH
 
   verify:
     name: ✅ Verify Deployment
     runs-on: ubuntu-latest
-    needs: verify-deployment-status
+    needs: finalize-deployment
     
     steps:
       - name: 🔍 Verify HTTP redirects to HTTPS

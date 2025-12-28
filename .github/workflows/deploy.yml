@@ -78,13 +78,21 @@ jobs:
           --health-retries 5
     
     steps:
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-postgresql-client
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: 📥 Install PostgreSQL client tools
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📥 Installing PostgreSQL client tools..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y --no-install-recommends postgresql-client
           echo "✅ PostgreSQL client installed"
           psql --version
 
@@ -233,8 +241,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-postgresql-client
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
 
       - name: Wait for PostgreSQL service
         env:
@@ -316,13 +334,21 @@ jobs:
           --health-retries 5
     
     steps:
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-postgresql-client
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: 📥 Install PostgreSQL client tools
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📥 Installing PostgreSQL client tools for cleanup..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y --no-install-recommends postgresql-client
           echo "✅ PostgreSQL client installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -444,13 +470,21 @@ jobs:
     needs: cleanup-test-database
     
     steps:
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-sshpass
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: 📥 Install SSH tools
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📥 Installing SSH tools (sshpass)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
-          sudo apt-get install -y sshpass
+          sudo apt-get install -y --no-install-recommends sshpass
           echo "✅ sshpass installed successfully"
           sshpass -V || true
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -487,13 +521,21 @@ jobs:
     needs: setup
     
     steps:
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-sshpass
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: 📥 Install SSH tools
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📥 Installing SSH tools (sshpass)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
-          sudo apt-get install -y sshpass
+          sudo apt-get install -y --no-install-recommends sshpass
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -543,13 +585,21 @@ jobs:
     needs: backup
     
     steps:
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-sshpass
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: 📥 Install SSH tools
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📥 Installing SSH tools (sshpass)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
-          sudo apt-get install -y sshpass
+          sudo apt-get install -y --no-install-recommends sshpass
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -590,13 +640,21 @@ jobs:
     needs: prepare-deployment
     
     steps:
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-sshpass
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: 📥 Install SSH tools
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📥 Installing SSH tools (sshpass)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
-          sudo apt-get install -y sshpass
+          sudo apt-get install -y --no-install-recommends sshpass
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -644,13 +702,21 @@ jobs:
     needs: build-and-deploy
     
     steps:
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-sshpass
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: 📥 Install SSH tools
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📥 Installing SSH tools (sshpass)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
-          sudo apt-get install -y sshpass
+          sudo apt-get install -y --no-install-recommends sshpass
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -705,13 +771,21 @@ jobs:
     needs: wait-services
     
     steps:
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-sshpass
+          restore-keys: |
+            apt-${{ runner.os }}-
+
       - name: 📥 Install SSH tools
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📥 Installing SSH tools (sshpass)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
-          sudo apt-get install -y sshpass
+          sudo apt-get install -y --no-install-recommends sshpass
           echo "✅ sshpass installed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 

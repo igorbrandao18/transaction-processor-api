@@ -73,7 +73,7 @@ describe('Transactions E2E Tests', () => {
       await processAllWaitingJobs(transactionQueue, (job) =>
         processor.handleTransaction(job),
       );
-      await waitForJobsToComplete(transactionQueue, 1000);
+      await waitForJobsToComplete(transactionQueue, 500);
 
       // Get transaction ID from database
       const dbResult = await dbPool.query(
@@ -137,7 +137,7 @@ describe('Transactions E2E Tests', () => {
       await processAllWaitingJobs(transactionQueue, (job) =>
         processor.handleTransaction(job),
       );
-      await waitForJobsToComplete(transactionQueue, 1000);
+      await waitForJobsToComplete(transactionQueue, 500);
 
       // Verify only one transaction exists
       const dbResult = await dbPool.query(

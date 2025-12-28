@@ -123,38 +123,96 @@ jobs:
           cd $DOCKER_COMPOSE_DIR
           docker compose down -v
 
-  ssh-test:
-    name: Test SSH Connection
+  deploy:
+    name: Deploy to Server
     runs-on: ubuntu-latest
+    needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Test SSH Connection with Password
+      - name: Copy files to server
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-          SSH_CONNECT_TIMEOUT: ${{ secrets.SSH_CONNECT_TIMEOUT }}
-          SSH_SUCCESS_MSG: ${{ secrets.SSH_SUCCESS_MSG }}
-          SSH_COMMANDS: ${{ secrets.SSH_COMMANDS }}
+          SERVER_APP_DIR: ${{ secrets.SERVER_APP_DIR }}
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            -o ConnectTimeout=$SSH_CONNECT_TIMEOUT \
             $SSH_USER@$SSH_HOST \
-            "$SSH_COMMANDS"
+            "mkdir -p $SERVER_APP_DIR"
+          
+          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -r docker/ $SSH_USER@$SSH_HOST:$SERVER_APP_DIR/
+          
+          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            package.json package-lock.json tsconfig.json nest-cli.json \
+            $SSH_USER@$SSH_HOST:$SERVER_APP_DIR/
+          
+          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -r src/ migrations/ $SSH_USER@$SSH_HOST:$SERVER_APP_DIR/
 
-      - name: Test Server Resources
+      - name: Deploy with Docker Compose
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-          SSH_RESOURCE_COMMANDS: ${{ secrets.SSH_RESOURCE_COMMANDS }}
+          SERVER_APP_DIR: ${{ secrets.SERVER_APP_DIR }}
+          DOCKER_COMPOSE_DIR: ${{ secrets.DOCKER_COMPOSE_DIR }}
+          POSTGRES_SERVICE: ${{ secrets.POSTGRES_SERVICE }}
+          REDIS_SERVICE: ${{ secrets.REDIS_SERVICE }}
+          APP_SERVICE: ${{ secrets.APP_SERVICE }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          NODE_ENV: ${{ secrets.NODE_ENV }}
+          PORT: ${{ secrets.PORT }}
+          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+          BULLMQ_QUEUE_NAME: ${{ secrets.BULLMQ_QUEUE_NAME }}
+          BULLMQ_DEFAULT_ATTEMPTS: ${{ secrets.BULLMQ_DEFAULT_ATTEMPTS }}
+          BULLMQ_BACKOFF_DELAY: ${{ secrets.BULLMQ_BACKOFF_DELAY }}
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST \
-            "$SSH_RESOURCE_COMMANDS"
+            $SSH_USER@$SSH_HOST << 'ENDSSH'
+            cd $SERVER_APP_DIR/$DOCKER_COMPOSE_DIR
+            docker compose down || true
+            docker compose pull || true
+            docker compose build --no-cache
+            docker compose up -d
+            docker compose ps
+            sleep 10
+            docker compose logs --tail=50
+          ENDSSH
+
+      - name: Verify deployment
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SERVER_APP_DIR: ${{ secrets.SERVER_APP_DIR }}
+          DOCKER_COMPOSE_DIR: ${{ secrets.DOCKER_COMPOSE_DIR }}
+          APP_SERVICE: ${{ secrets.APP_SERVICE }}
+          HEALTH_CHECK_URL: ${{ secrets.HEALTH_CHECK_URL }}
+        run: |
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            $SSH_USER@$SSH_HOST << 'ENDSSH'
+            cd $SERVER_APP_DIR/$DOCKER_COMPOSE_DIR
+            docker compose ps
+            curl -f $HEALTH_CHECK_URL || echo "Health check failed"
+          ENDSSH

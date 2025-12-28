@@ -20,6 +20,7 @@ env:
   TEST_DB_PORT: ${{ secrets.TEST_DB_PORT }}
   TEST_REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
   TEST_REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
+  TEST_POSTGRES_DB: ${{ secrets.TEST_POSTGRES_DB }}
 
 jobs:
   lint:
@@ -75,7 +76,7 @@ jobs:
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: postgres
+          POSTGRES_DB: ${{ secrets.TEST_POSTGRES_DB }}
         ports:
           - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-
@@ -117,7 +118,7 @@ jobs:
           echo "   Host: ${{ secrets.TEST_DB_HOST }}"
           echo "   Port: ${{ secrets.TEST_DB_PORT }}"
           echo "   User: ${{ secrets.TEST_DB_USER }}"
-          echo "   Database: postgres (default - service container)"
+          echo "   Database: ${{ secrets.TEST_POSTGRES_DB }} (default - service container)"
           echo ""
           echo "⏳ Waiting for PostgreSQL to accept connections..."
           MAX_RETRIES=30
@@ -216,7 +217,7 @@ jobs:
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: postgres
+          POSTGRES_DB: ${{ secrets.TEST_POSTGRES_DB }}
         ports:
           - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-
@@ -331,7 +332,7 @@ jobs:
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: postgres
+          POSTGRES_DB: ${{ secrets.TEST_POSTGRES_DB }}
         ports:
           - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-
@@ -755,8 +756,8 @@ jobs:
             BACKUP_DIR="/tmp/backups"
             LATEST_BACKUP=$(ls -t "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -1)
             if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
-              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" || true
-              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME;" || true
+              docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "DROP DATABASE IF EXISTS $DB_NAME;" || true
+              docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "CREATE DATABASE $DB_NAME;" || true
               cat "$LATEST_BACKUP" | docker exec -i transaction-db psql -U "$DB_USER" -d "$DB_NAME" || echo "⚠️ Backup restore failed (OK for first deployment)"
             fi
             

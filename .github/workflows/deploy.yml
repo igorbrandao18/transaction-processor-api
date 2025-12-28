@@ -136,30 +136,36 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Copy files to server
+      - name: Get repository URL
+        id: repo_url
+        run: |
+          REPO_URL=$(gh repo view --json url --jq '.url')
+          echo "url=$REPO_URL" >> $GITHUB_OUTPUT
+          echo "Repository URL: $REPO_URL"
+
+      - name: Clone repository on server
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
           SERVER_APP_DIR: ${{ secrets.SERVER_APP_DIR }}
+          REPO_URL: ${{ steps.repo_url.outputs.url }}
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST \
-            "mkdir -p $SERVER_APP_DIR"
-          
-          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -r docker/ $SSH_USER@$SSH_HOST:$SERVER_APP_DIR/
-          
-          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            package.json package-lock.json tsconfig.json nest-cli.json \
-            $SSH_USER@$SSH_HOST:$SERVER_APP_DIR/
-          
-          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -r src/ migrations/ $SSH_USER@$SSH_HOST:$SERVER_APP_DIR/
+            $SSH_USER@$SSH_HOST << 'ENDSSH'
+            if [ -d "$SERVER_APP_DIR" ]; then
+              cd $SERVER_APP_DIR
+              git fetch origin
+              git reset --hard origin/main
+              git clean -fd
+            else
+              mkdir -p $(dirname $SERVER_APP_DIR)
+              git clone $REPO_URL $SERVER_APP_DIR
+              cd $SERVER_APP_DIR
+              git checkout main
+            fi
+          ENDSSH
 
       - name: Deploy with Docker Compose
         env:
@@ -191,7 +197,8 @@ jobs:
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST \
-            "cd $SERVER_APP_DIR/$DOCKER_COMPOSE_DIR && \
-             docker compose ps && \
-             curl -f $HEALTH_CHECK_URL || echo 'Health check failed'"
+            $SSH_USER@$SSH_HOST << 'ENDSSH'
+            cd $SERVER_APP_DIR/$DOCKER_COMPOSE_DIR
+            docker compose ps
+            curl -f $HEALTH_CHECK_URL || echo 'Health check failed'
+          ENDSSH

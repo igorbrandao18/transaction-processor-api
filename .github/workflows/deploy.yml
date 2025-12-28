@@ -58,7 +58,7 @@ jobs:
         run: npm run test:unit
 
   setup-test-database:
-    name: Setup Test Database
+    name: 📦 Setup Test Database
     runs-on: ubuntu-latest
     
     services:
@@ -77,38 +77,117 @@ jobs:
           --health-retries 5
     
     steps:
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: 📥 Install PostgreSQL client tools
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📥 Installing PostgreSQL client tools..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          echo "✅ PostgreSQL client installed"
+          psql --version
 
-      - name: Wait for PostgreSQL service
+      - name: 🔍 Check PostgreSQL service availability
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
         run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔍 Checking PostgreSQL service availability..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📍 Connection details:"
+          echo "   Host: localhost"
+          echo "   Port: 5432"
+          echo "   User: postgres"
+          echo "   Database: postgres (default)"
+          echo ""
+          echo "⏳ Waiting for PostgreSQL to accept connections..."
+          MAX_RETRIES=30
+          RETRY_COUNT=0
           until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "⏳ Waiting for PostgreSQL to be ready..."
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+              echo "❌ PostgreSQL service did not become ready after $MAX_RETRIES attempts"
+              exit 1
+            fi
+            echo "   Attempt $RETRY_COUNT/$MAX_RETRIES: PostgreSQL not ready yet, waiting 2 seconds..."
             sleep 2
           done
-          echo "✅ PostgreSQL service is ready"
+          echo "✅ PostgreSQL service is ready and accepting connections"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: Create test database
+      - name: 📊 List existing databases
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
         run: |
-          echo "📦 Creating test database: transactions_db_test"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE transactions_db_test;" && \
-            echo "✅ Test database 'transactions_db_test' created successfully" || \
-            echo "⚠️  Database may already exist (this is OK)"
+          echo "📊 Current databases before test database creation:"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Database list:"
-          psql -h localhost -p 5432 -U postgres -c "\l" | grep -E "Name|transactions_db_test" || true
+          psql -h localhost -p 5432 -U postgres -c "\l" || true
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: 🆕 Create test database
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          TEST_DB_NAME: transactions_db_test
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🆕 Creating test database..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📋 Database details:"
+          echo "   Name: $TEST_DB_NAME"
+          echo "   Owner: postgres"
+          echo "   Encoding: UTF8 (default)"
+          echo "   Purpose: Integration tests execution"
+          echo ""
+          echo "🔨 Executing CREATE DATABASE command..."
+          if psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1; then
+            echo ""
+            echo "✅ SUCCESS: Test database '$TEST_DB_NAME' created successfully!"
+          else
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo ""
+              echo "⚠️  WARNING: Database '$TEST_DB_NAME' may already exist (this is OK)"
+            else
+              echo ""
+              echo "❌ ERROR: Failed to create test database"
+              exit $EXIT_CODE
+            fi
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: ✅ Verify test database creation
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          TEST_DB_NAME: transactions_db_test
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Verifying test database exists..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+            echo "✅ VERIFIED: Test database '$TEST_DB_NAME' exists"
+            echo ""
+            echo "📊 Database information:"
+            psql -h localhost -p 5432 -U postgres -c "\l" | grep -E "Name|$TEST_DB_NAME" || true
+          else
+            echo "❌ ERROR: Test database '$TEST_DB_NAME' was not created!"
+            exit 1
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 Test database setup completed successfully!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   test-integration:
     name: Integration Tests
@@ -210,7 +289,7 @@ jobs:
           npm run test:integration
 
   cleanup-test-database:
-    name: Cleanup Test Database
+    name: 🗑️  Cleanup Test Database
     runs-on: ubuntu-latest
     needs: [setup-test-database, test-integration]
     if: always()
@@ -231,38 +310,127 @@ jobs:
           --health-retries 5
     
     steps:
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: 📥 Install PostgreSQL client tools
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📥 Installing PostgreSQL client tools for cleanup..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+          echo "✅ PostgreSQL client installed"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: Wait for PostgreSQL service
+      - name: 🔍 Check PostgreSQL service availability
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
         run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔍 Checking PostgreSQL service availability..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          MAX_RETRIES=30
+          RETRY_COUNT=0
           until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "⏳ Waiting for PostgreSQL to be ready..."
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+              echo "❌ PostgreSQL service did not become ready"
+              exit 1
+            fi
+            echo "   Attempt $RETRY_COUNT/$MAX_RETRIES: Waiting for PostgreSQL..."
             sleep 2
           done
           echo "✅ PostgreSQL service is ready"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: Drop test database
+      - name: 📊 List databases before cleanup
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          TEST_DB_NAME: transactions_db_test
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Current databases before cleanup:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          psql -h localhost -p 5432 -U postgres -c "\l" || true
+          echo ""
+          if psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+            echo "✅ Test database '$TEST_DB_NAME' found - will be removed"
+          else
+            echo "⚠️  Test database '$TEST_DB_NAME' not found - may have been already removed"
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: 🗑️  Drop test database
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          TEST_DB_NAME: transactions_db_test
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🗑️  Cleaning up test database..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📋 Cleanup details:"
+          echo "   Database to remove: $TEST_DB_NAME"
+          echo "   Command: DROP DATABASE IF EXISTS $TEST_DB_NAME"
+          echo "   Purpose: Free up resources after test execution"
+          echo ""
+          echo "🔨 Executing DROP DATABASE command..."
+          if psql -h localhost -p 5432 -U postgres -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" 2>&1; then
+            echo ""
+            echo "✅ SUCCESS: Test database '$TEST_DB_NAME' destroyed successfully!"
+          else
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo ""
+              echo "⚠️  WARNING: Database '$TEST_DB_NAME' may not exist (this is OK)"
+            else
+              echo ""
+              echo "❌ ERROR: Failed to drop test database (exit code: $EXIT_CODE)"
+              echo "⚠️  Continuing cleanup process..."
+            fi
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: ✅ Verify test database removal
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          TEST_DB_NAME: transactions_db_test
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Verifying test database has been removed..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+            echo "⚠️  WARNING: Test database '$TEST_DB_NAME' still exists"
+            echo "📊 Current database list:"
+            psql -h localhost -p 5432 -U postgres -c "\l" || true
+          else
+            echo "✅ VERIFIED: Test database '$TEST_DB_NAME' has been successfully removed"
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: 📊 Show remaining databases
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
         run: |
-          echo "🗑️  Cleaning up test database..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h localhost -p 5432 -U postgres -c "DROP DATABASE IF EXISTS transactions_db_test;" && \
-            echo "✅ Test database 'transactions_db_test' destroyed successfully" || \
-            echo "⚠️  Database may not exist (this is OK)"
+          echo "📊 Remaining databases after cleanup:"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Remaining databases:"
-          psql -h localhost -p 5432 -U postgres -c "\l" | grep -E "Name|postgres|template" || true
+          psql -h localhost -p 5432 -U postgres -c "\l" || true
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 Test database cleanup completed!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   setup:
     name: Setup and Verify SSH Connection

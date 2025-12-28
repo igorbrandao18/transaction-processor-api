@@ -739,7 +739,7 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' TEST_POSTGRES_DB='$TEST_POSTGRES_DB' bash -s" << 'ENDSSH'
+            $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' bash -s" << 'ENDSSH'
             echo "⏳ Waiting for PostgreSQL..."
             timeout=60
             elapsed=0
@@ -756,8 +756,8 @@ jobs:
             BACKUP_DIR="/tmp/backups"
             LATEST_BACKUP=$(ls -t "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -1)
             if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
-              docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "DROP DATABASE IF EXISTS $DB_NAME;" || true
-              docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "CREATE DATABASE $DB_NAME;" || true
+              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS $DB_NAME;" || true
+              docker exec -i transaction-db psql -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME;" || true
               cat "$LATEST_BACKUP" | docker exec -i transaction-db psql -U "$DB_USER" -d "$DB_NAME" || echo "⚠️ Backup restore failed (OK for first deployment)"
             fi
             

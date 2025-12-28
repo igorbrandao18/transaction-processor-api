@@ -109,8 +109,8 @@ jobs:
 
       - name: Test Server Resources
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST || '165.22.41.23' }}
-          SSH_USER: ${{ secrets.SSH_USER || 'root' }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
@@ -119,5 +119,5 @@ jobs:
             "echo '📊 Server Resources:' && \
              echo 'Memory:' && free -h && \
              echo 'Disk:' && df -h / && \
-             echo 'CPU:' && nproc && \
-             echo 'Running containers:' && (docker ps || echo 'Docker not running')"
+             echo 'CPU Cores:' && nproc && \
+             echo 'Running containers:' && (docker ps 2>/dev/null || echo 'Docker not running')"

@@ -117,7 +117,7 @@ jobs:
           echo "   Host: ${{ secrets.TEST_DB_HOST }}"
           echo "   Port: ${{ secrets.TEST_DB_PORT }}"
           echo "   User: ${{ secrets.TEST_DB_USER }}"
-          echo "   Database: postgres (default)"
+          echo "   Database: postgres (default - service container)"
           echo ""
           echo "⏳ Waiting for PostgreSQL to accept connections..."
           MAX_RETRIES=30
@@ -136,10 +136,10 @@ jobs:
 
       - name: 📊 List existing databases
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📊 Current databases before test database creation:"
@@ -149,10 +149,10 @@ jobs:
 
       - name: 🆕 Create test database
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -160,7 +160,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📋 Database details:"
           echo "   Name: $TEST_DB_NAME"
-          echo "   Owner: postgres"
+          echo "   Owner: ${{ secrets.TEST_DB_USER }}"
           echo "   Encoding: UTF8 (default)"
           echo "   Purpose: Integration tests execution"
           echo ""
@@ -183,10 +183,10 @@ jobs:
 
       - name: ✅ Verify test database creation
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -385,10 +385,10 @@ jobs:
 
       - name: 📊 List databases before cleanup
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -405,10 +405,10 @@ jobs:
 
       - name: 🗑️  Drop test database
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -438,10 +438,10 @@ jobs:
 
       - name: ✅ Verify test database removal
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -458,10 +458,10 @@ jobs:
 
       - name: 📊 Show remaining databases
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📊 Remaining databases after cleanup:"

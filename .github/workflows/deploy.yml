@@ -452,6 +452,7 @@ jobs:
 
       - name: 🔍 Test SSH connection
         run: |
+          echo "::add-mask::$SSH_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔍 Testing SSH connection to deployment server..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -493,6 +494,7 @@ jobs:
 
       - name: 💾 Create and cleanup database backup
         run: |
+          echo "::add-mask::$SSH_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "💾 Creating database backup and cleaning up old backups..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -550,6 +552,7 @@ jobs:
         env:
           REPO_URL: https://github.com/${{ github.repository }}.git
         run: |
+          echo "::add-mask::$SSH_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📦 Preparing deployment (clone + archive)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -594,6 +597,8 @@ jobs:
 
       - name: 🚀 Stop, build and start containers
         run: |
+          echo "::add-mask::$SSH_PASSWORD"
+          echo "::add-mask::$DB_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🚀 Building and deploying containers..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -646,6 +651,7 @@ jobs:
 
       - name: ⏳ Wait for services and restore backup
         run: |
+          echo "::add-mask::$SSH_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "⏳ Waiting for services and restoring backup..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -706,6 +712,7 @@ jobs:
 
       - name: 🔄 Run migrations and verify status
         run: |
+          echo "::add-mask::$SSH_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔄 Finalizing deployment (migrations + verification)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

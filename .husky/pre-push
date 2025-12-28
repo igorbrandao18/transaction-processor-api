@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running lint (with auto-fix)..."
+npm run lint
+
+echo "🧪 Running all tests..."
+npm run test:all
+

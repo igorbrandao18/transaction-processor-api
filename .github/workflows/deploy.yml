@@ -29,11 +29,11 @@ jobs:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
           REPO_URL: https://github.com/${{ github.repository }}.git
         run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $SSH_USER@$SSH_HOST << 'ENDSSH'
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $SSH_USER@$SSH_HOST << ENDSSH
             mkdir -p /tmp
             cd /tmp
             rm -rf transaction-processor-api
-            git clone $REPO_URL
+            git clone $REPO_URL transaction-processor-api
             cd transaction-processor-api
             echo "Repository cloned successfully"
             ls -la

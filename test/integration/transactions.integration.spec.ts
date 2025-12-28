@@ -69,7 +69,7 @@ describe('Transactions Integration Tests', () => {
       await processAllWaitingJobs(transactionQueue, (job) =>
         processor.handleTransaction(job),
       );
-      await waitForJobsToComplete(transactionQueue, 3000);
+      await waitForJobsToComplete(transactionQueue, 1000);
 
       // Verify transaction was created in database
       const dbResult = await dbPool.query(
@@ -100,7 +100,7 @@ describe('Transactions Integration Tests', () => {
       await processAllWaitingJobs(transactionQueue, (job) =>
         processor.handleTransaction(job),
       );
-      await waitForJobsToComplete(transactionQueue, 3000);
+      await waitForJobsToComplete(transactionQueue, 1000);
 
       // Try to create duplicate
       await request(app.getHttpServer())
@@ -113,7 +113,7 @@ describe('Transactions Integration Tests', () => {
         await processAllWaitingJobs(transactionQueue, (job) =>
           processor.handleTransaction(job),
         );
-        await waitForJobsToComplete(transactionQueue, 2000);
+        await waitForJobsToComplete(transactionQueue, 500);
 
         // Check if transaction exists
         const checkResult = await dbPool.query(
@@ -123,7 +123,7 @@ describe('Transactions Integration Tests', () => {
         if (parseInt(checkResult.rows[0].count) > 0) {
           break; // Transaction exists, we're done
         }
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
 
       // Verify only one transaction exists
@@ -171,7 +171,7 @@ describe('Transactions Integration Tests', () => {
       await processAllWaitingJobs(transactionQueue, (job) =>
         processor.handleTransaction(job),
       );
-      await waitForJobsToComplete(transactionQueue, 3000);
+      await waitForJobsToComplete(transactionQueue, 1000);
 
       const response = await request(app.getHttpServer())
         .get('/transactions?page=1&limit=10')
@@ -201,7 +201,7 @@ describe('Transactions Integration Tests', () => {
       await processAllWaitingJobs(transactionQueue, (job) =>
         processor.handleTransaction(job),
       );
-      await waitForJobsToComplete(transactionQueue, 3000);
+      await waitForJobsToComplete(transactionQueue, 1000);
 
       // Get transaction ID from database
       const dbResult = await dbPool.query(

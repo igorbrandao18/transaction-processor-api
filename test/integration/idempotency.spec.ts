@@ -66,7 +66,7 @@ describe('Idempotency Integration Tests', () => {
       await processAllWaitingJobs(transactionQueue, (job) =>
         processor.handleTransaction(job),
       );
-      await waitForJobsToComplete(transactionQueue, 3000);
+      await waitForJobsToComplete(transactionQueue, 1000);
 
       // Second request with same transactionId
       await request(app.getHttpServer())
@@ -78,7 +78,7 @@ describe('Idempotency Integration Tests', () => {
       await processAllWaitingJobs(transactionQueue, (job) =>
         processor.handleTransaction(job),
       );
-      await waitForJobsToComplete(transactionQueue, 3000);
+      await waitForJobsToComplete(transactionQueue, 1000);
 
       // Verify only one transaction exists
       const dbResult = await dbPool.query(
@@ -123,7 +123,7 @@ describe('Idempotency Integration Tests', () => {
         await processAllWaitingJobs(transactionQueue, (job) =>
           processor.handleTransaction(job),
         );
-        await waitForJobsToComplete(transactionQueue, 2000);
+        await waitForJobsToComplete(transactionQueue, 500);
 
         // Check if transaction was created
         const checkResult = await dbPool.query(
@@ -133,7 +133,7 @@ describe('Idempotency Integration Tests', () => {
         if (parseInt(checkResult.rows[0].count) > 0) {
           break; // Transaction created, we're done
         }
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
 
       // Verify only one transaction exists

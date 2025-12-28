@@ -15,7 +15,7 @@ export async function waitForJobsToComplete<T = any>(
   timeout: number = 10000,
 ): Promise<void> {
   const startTime = Date.now();
-  const checkInterval = 50; // Check every 50ms instead of 100ms
+  const checkInterval = 10; // Reduced to 10ms for faster checks
 
   while (Date.now() - startTime < timeout) {
     const waiting = await queue.getWaiting();
@@ -33,8 +33,8 @@ export async function waitForJobsToComplete<T = any>(
       active.length === 0 &&
       (delayed.length === 0 || hasOnlyDelayedRetries)
     ) {
-      // Give a small delay to ensure processing is complete
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Minimal delay to ensure processing is complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // If we have delayed jobs, they're likely retries that will fail
       // Clean them up to avoid timeout issues
@@ -51,7 +51,7 @@ export async function waitForJobsToComplete<T = any>(
       return;
     }
 
-    // Wait a bit before checking again (reduced from 100ms to 50ms)
+    // Wait a bit before checking again (reduced to 10ms)
     await new Promise((resolve) => setTimeout(resolve, checkInterval));
   }
 
@@ -105,8 +105,8 @@ export async function waitForJobToComplete<T = any>(
       return state;
     }
 
-    // Wait a bit before checking again
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait a bit before checking again (reduced for faster tests)
+    await new Promise((resolve) => setTimeout(resolve, 10));
   }
 
   throw new Error(`Timeout waiting for job ${jobId} to complete`);

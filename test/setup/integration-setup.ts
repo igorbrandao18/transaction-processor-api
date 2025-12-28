@@ -1,7 +1,8 @@
 import * as dotenv from 'dotenv';
 
 // Load test environment variables BEFORE importing database config
-dotenv.config({ path: '.env.test', override: true });
+// Don't override if env vars are already set (from pre-push hook or CI)
+dotenv.config({ path: '.env.test', override: false });
 
 import { dbPool } from '@config/database.config';
 

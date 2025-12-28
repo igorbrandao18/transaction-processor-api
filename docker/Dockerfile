@@ -16,9 +16,23 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy and extract application source code as tar.gz
-COPY app.tar.gz ./
-RUN tar -xzf app.tar.gz && rm app.tar.gz
+# Copy application source code
+# In production (CI/CD), app.tar.gz is provided
+# In development, copy files directly
+ARG BUILD_MODE=development
+COPY app.tar.gz* ./
+RUN if [ -f app.tar.gz ]; then \
+      echo "Extracting app.tar.gz (production mode)..." && \
+      tar -xzf app.tar.gz && rm app.tar.gz; \
+    else \
+      echo "Copying source files directly (development mode)..." && \
+      echo "Note: Source files should be copied via docker-compose context"; \
+    fi
+
+# Copy source files if not using tar.gz (development mode)
+COPY tsconfig.json nest-cli.json ./
+COPY src ./src
+COPY migrations ./migrations
 
 # Build TypeScript
 RUN npm run build && echo "Build completed, checking dist..." && ls -la dist/ && test -f dist/src/main.js || (echo "ERROR: dist/src/main.js not found!" && find . -name "main.js" 2>/dev/null && exit 1)

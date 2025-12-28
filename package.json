@@ -20,7 +20,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:load": "k6 run test/load/transactions.load.js",
+    "test:load": "k6 run tests/k6/transactions.load.js",
+    "test:load:smoke": "k6 run tests/k6/smoke.js",
+    "test:load:stress": "k6 run tests/k6/stress.js",
     "migrate": "ts-node migrations/run.ts",
     "prepare": "husky",
     "lint:check": "eslint \"{src,test}/**/*.ts\"",
@@ -43,7 +45,8 @@
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "prom-client": "^15.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

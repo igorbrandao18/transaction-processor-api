@@ -36,3 +36,5 @@ git push --no-verify
 
 **⚠️ Use apenas em emergências!**
 
+
+

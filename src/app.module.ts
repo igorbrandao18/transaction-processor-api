@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TransactionsController } from '@controllers/transactions.controller';
 import { HealthController } from '@controllers/health.controller';
+import { MetricsController } from '@controllers/metrics.controller';
 import { TransactionsService } from '@services/transactions.service';
 import { TransactionsRepository } from '@repositories/transactions.repository';
 import { LoggerMiddleware } from '@middleware/logger.middleware';
@@ -26,7 +27,12 @@ import { TransactionProcessor } from './processors/transaction.processor';
       name: TRANSACTION_QUEUE_NAME,
     }),
   ],
-  controllers: [AppController, TransactionsController, HealthController],
+  controllers: [
+    AppController,
+    TransactionsController,
+    HealthController,
+    MetricsController,
+  ],
   providers: [
     AppService,
     TransactionsService,

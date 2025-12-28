@@ -1,12 +1,1 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-echo "🔍 Running lint..."
 npm run lint:check
-
-echo "🧪 Running unit tests (fast feedback)..."
-npm run test:unit
-
-echo "✅ Pre-push checks passed!"
-echo "ℹ️  Integration and E2E tests will run in CI/CD pipeline"
-

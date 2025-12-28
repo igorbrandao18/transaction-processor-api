@@ -103,6 +103,65 @@ jobs:
             ls -la
           ENDSSH
 
+      - name: Prepare application archive
+        run: |
+          sshpass -p "$SSH_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            $SSH_USER@$SSH_HOST << 'ENDSSH'
+            cd /tmp/transaction-processor-api
+            
+            echo "📦 Creating application archive (excluding unnecessary files)..."
+            
+            tar -czf app.tar.gz \
+              --exclude='node_modules' \
+              --exclude='dist' \
+              --exclude='build' \
+              --exclude='*.tsbuildinfo' \
+              --exclude='test' \
+              --exclude='coverage' \
+              --exclude='*.spec.ts' \
+              --exclude='*.test.ts' \
+              --exclude='*.e2e-spec.ts' \
+              --exclude='README.md' \
+              --exclude='docs' \
+              --exclude='*.md' \
+              --exclude='.git' \
+              --exclude='.gitignore' \
+              --exclude='.gitattributes' \
+              --exclude='.vscode' \
+              --exclude='.idea' \
+              --exclude='*.swp' \
+              --exclude='*.swo' \
+              --exclude='*~' \
+              --exclude='.env' \
+              --exclude='.env.local' \
+              --exclude='.env.*.local' \
+              --exclude='.DS_Store' \
+              --exclude='Thumbs.db' \
+              --exclude='logs' \
+              --exclude='*.log' \
+              --exclude='.eslintcache' \
+              --exclude='docker' \
+              --exclude='.dockerignore' \
+              --exclude='docker-compose.yml' \
+              src/ \
+              package.json \
+              package-lock.json \
+              tsconfig.json \
+              nest-cli.json \
+              migrations/ \
+              eslint.config.mjs \
+              .prettierrc \
+              tsconfig.build.json || {
+              echo "⚠️ Failed to create archive, falling back to direct copy"
+              exit 0
+            }
+            
+            echo "✅ Archive created successfully"
+            ls -lh app.tar.gz
+          ENDSSH
+
       - name: Build and start containers
         run: |
           sshpass -p "$SSH_PASSWORD" ssh \
@@ -127,6 +186,10 @@ jobs:
             
             echo "🔨 Building containers with cache (only rebuild changed layers)..."
             docker compose build --pull
+            
+            echo "🧹 Cleaning up archive after build..."
+            cd /tmp/transaction-processor-api
+            rm -f app.tar.gz || true
             
             echo "🚀 Starting containers..."
             docker compose up -d

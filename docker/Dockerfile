@@ -12,13 +12,13 @@ RUN npm ci --only=production --ignore-scripts && npm cache clean --force
 FROM node:18-alpine AS build
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better caching
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code and config files
-COPY . .
-COPY tsconfig.json nest-cli.json ./
+# Copy and extract application source code as tar.gz
+COPY app.tar.gz ./
+RUN tar -xzf app.tar.gz && rm app.tar.gz
 
 # Build TypeScript
 RUN npm run build && echo "Build completed, checking dist..." && ls -la dist/ && test -f dist/src/main.js || (echo "ERROR: dist/src/main.js not found!" && find . -name "main.js" 2>/dev/null && exit 1)

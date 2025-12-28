@@ -263,10 +263,10 @@ jobs:
 
       - name: Wait for PostgreSQL service
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
           echo "🔍 Checking PostgreSQL service availability..."
           until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
@@ -277,10 +277,10 @@ jobs:
 
       - name: Create test database if not exists
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "🔍 Checking if test database exists..."

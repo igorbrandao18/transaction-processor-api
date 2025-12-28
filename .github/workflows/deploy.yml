@@ -676,11 +676,13 @@ jobs:
             docker container prune -f || true
             docker volume prune -f || true
             
-            echo "🔨 Building containers..."
+            echo "🔨 Building containers with cache optimization..."
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
+            echo "📥 Pulling base images (using cache)..."
             docker compose pull || true
-            docker compose build --pull
+            echo "🔨 Building containers (reusing cached layers)..."
+            docker compose build --pull --progress=plain
             
             echo "🚀 Starting containers..."
             docker compose up -d

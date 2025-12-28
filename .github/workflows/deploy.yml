@@ -267,7 +267,7 @@ jobs:
   setup:
     name: Setup and Verify SSH Connection
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, test-integration]
+    needs: [lint, test-unit, cleanup-test-database]
     
     steps:
       - name: Install sshpass

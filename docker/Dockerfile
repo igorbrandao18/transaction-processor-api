@@ -16,11 +16,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code
+# Copy source code and config files
 COPY . .
+COPY tsconfig.json nest-cli.json ./
 
 # Build TypeScript
-RUN npm run build && ls -la dist/ && test -f dist/main.js || (echo "ERROR: dist/main.js not found!" && ls -la dist/ && exit 1)
+RUN npm run build && echo "Build completed, checking dist..." && ls -la . && if [ -d "dist" ]; then ls -la dist/; else echo "dist directory not found!"; fi && test -f dist/main.js || (echo "ERROR: dist/main.js not found!" && find . -name "main.js" 2>/dev/null && exit 1)
 
 # Stage 3: Production
 FROM node:18-alpine AS production

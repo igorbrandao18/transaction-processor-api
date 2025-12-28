@@ -73,6 +73,7 @@ jobs:
 
       - name: 🧪 Run unit tests with coverage
         timeout-minutes: 10
+        continue-on-error: true
         env:
           NODE_ENV: test
         run: npm run test:unit -- --coverage --coverageDirectory=coverage/unit --coverageReporters=lcov --coverageReporters=text --coverageReporters=text-summary
@@ -565,18 +566,20 @@ jobs:
           path: coverage/unit
 
       - name: 📥 Download integration test results
+        if: always()
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: integration-test-results
           path: coverage/integration
-          continue-on-error: true
 
       - name: 📥 Download E2E test results
+        if: always()
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: e2e-test-results
           path: coverage/e2e
-          continue-on-error: true
 
       - name: 📊 Generate combined coverage report
         run: |

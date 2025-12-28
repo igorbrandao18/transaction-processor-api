@@ -39,9 +39,9 @@ jobs:
 
       - name: Create test database
         env:
-          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
-          TEST_DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
-          TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
+          TEST_DB_USER: ${{ secrets.TEST_DB_USER }}
+          TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
           cd docker
           docker compose exec -T postgres psql -U $TEST_DB_USER -c "CREATE DATABASE $TEST_DB_NAME;" || echo "Database may already exist"
@@ -54,11 +54,11 @@ jobs:
         run: npm run migrate
         env:
           NODE_ENV: test
-          DB_HOST: ${{ secrets.TEST_DB_HOST || 'localhost' }}
-          DB_PORT: ${{ secrets.TEST_DB_PORT || '5432' }}
-          DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
-          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
-          DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
+          DB_HOST: ${{ secrets.TEST_DB_HOST }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_USER: ${{ secrets.TEST_DB_USER }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME }}
 
       - name: Run linter
         run: npm run lint:check
@@ -72,25 +72,25 @@ jobs:
         run: npm run test:integration
         env:
           NODE_ENV: test
-          DB_HOST: ${{ secrets.TEST_DB_HOST || 'localhost' }}
-          DB_PORT: ${{ secrets.TEST_DB_PORT || '5432' }}
-          DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
-          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
-          DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
-          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST || 'localhost' }}
-          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT || '6379' }}
+          DB_HOST: ${{ secrets.TEST_DB_HOST }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_USER: ${{ secrets.TEST_DB_USER }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME }}
+          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
 
       - name: Run E2E tests
         run: npm run test:e2e
         env:
           NODE_ENV: test
-          DB_HOST: ${{ secrets.TEST_DB_HOST || 'localhost' }}
-          DB_PORT: ${{ secrets.TEST_DB_PORT || '5432' }}
-          DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
-          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
-          DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
-          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST || 'localhost' }}
-          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT || '6379' }}
+          DB_HOST: ${{ secrets.TEST_DB_HOST }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_USER: ${{ secrets.TEST_DB_USER }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME }}
+          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
 
       - name: Generate coverage report
         run: npm run test:cov
@@ -99,8 +99,8 @@ jobs:
       - name: Drop test database
         if: always()
         env:
-          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
-          TEST_DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
+          TEST_DB_USER: ${{ secrets.TEST_DB_USER }}
         run: |
           cd docker
           docker compose exec -T postgres psql -U $TEST_DB_USER -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" || echo "Database may not exist"
@@ -123,8 +123,8 @@ jobs:
 
       - name: Test SSH Connection with Password
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST || '165.22.41.23' }}
-          SSH_USER: ${{ secrets.SSH_USER || 'root' }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \

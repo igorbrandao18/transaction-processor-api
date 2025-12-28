@@ -6,13 +6,20 @@ on:
       - main
 
 env:
+  # SSH Connection
   SSH_HOST: ${{ secrets.SSH_HOST }}
   SSH_USER: ${{ secrets.SSH_USER }}
   SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+  
+  # Production Database
   DB_NAME: ${{ secrets.DB_NAME }}
   DB_USER: ${{ secrets.DB_USER }}
   DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  
+  # Domain
   DOMAIN: ${{ secrets.DOMAIN }}
+  
+  # Test Database Configuration
   TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
   TEST_DB_USER: ${{ secrets.TEST_DB_USER }}
   TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
@@ -20,51 +27,49 @@ env:
   TEST_DB_PORT: ${{ secrets.TEST_DB_PORT }}
   TEST_REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
   TEST_REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
+  
+  # PostgreSQL Default Database (for administrative operations)
   POSTGRES_DEFAULT_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
-  POSTGRES_INTERNAL_PORT: ${{ secrets.POSTGRES_INTERNAL_PORT }}
-  REDIS_INTERNAL_PORT: ${{ secrets.REDIS_INTERNAL_PORT }}
-  POSTGRES_IMAGE: ${{ secrets.POSTGRES_IMAGE }}
-  REDIS_IMAGE: ${{ secrets.REDIS_IMAGE }}
 
 jobs:
   lint:
-    name: Lint Check
+    name: 🔍 Lint Check
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: npm ci
 
-      - name: Run lint
+      - name: 🔍 Run lint
         run: npm run lint:check
 
   test-unit:
-    name: Unit Tests
+    name: 🧪 Unit Tests
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: npm ci
 
-      - name: Run unit tests
+      - name: 🧪 Run unit tests
         env:
           NODE_ENV: test
         run: npm run test:unit
@@ -76,13 +81,13 @@ jobs:
     
     services:
       postgres:
-        image: ${{ secrets.POSTGRES_IMAGE }}
+        image: postgres:15-alpine
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
         ports:
-          - ${{ secrets.TEST_DB_PORT }}:${{ secrets.POSTGRES_INTERNAL_PORT }}
+          - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -98,273 +103,12 @@ jobs:
           restore-keys: |
             apt-${{ runner.os }}-
 
-      - name: 📥 Install PostgreSQL client tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing PostgreSQL client tools..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends postgresql-client
-          echo "✅ PostgreSQL client installed"
-          psql --version
-
-      - name: 🔍 Check PostgreSQL service availability
-        env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
-          PGUSER: ${{ secrets.TEST_DB_USER }}
-          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔍 Checking PostgreSQL service availability..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📍 Connection details:"
-          echo "   Host: ${{ secrets.TEST_DB_HOST }}"
-          echo "   Port: ${{ secrets.TEST_DB_PORT }}"
-          echo "   User: ${{ secrets.TEST_DB_USER }}"
-          echo "   Database: ${{ secrets.POSTGRES_DEFAULT_DB }} (default - service container)"
-          echo ""
-          echo "⏳ Waiting for PostgreSQL to accept connections..."
-          MAX_RETRIES=30
-          RETRY_COUNT=0
-          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-              echo "❌ PostgreSQL service did not become ready after $MAX_RETRIES attempts"
-              exit 1
-            fi
-            echo "   Attempt $RETRY_COUNT/$MAX_RETRIES: PostgreSQL not ready yet, waiting 2 seconds..."
-            sleep 2
-          done
-          echo "✅ PostgreSQL service is ready and accepting connections"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 📊 List existing databases
-        env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
-          PGUSER: ${{ secrets.TEST_DB_USER }}
-          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Current databases before test database creation:"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" || true
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 🆕 Create test database
-        env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
-          PGUSER: ${{ secrets.TEST_DB_USER }}
-          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🆕 Creating test database..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📋 Database details:"
-          echo "   Name: $TEST_DB_NAME"
-          echo "   Owner: ${{ secrets.TEST_DB_USER }}"
-          echo "   Encoding: UTF8 (default)"
-          echo "   Purpose: Integration tests execution"
-          echo ""
-          echo "🔨 Executing CREATE DATABASE command..."
-          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1; then
-            echo ""
-            echo "✅ SUCCESS: Test database '$TEST_DB_NAME' created successfully!"
-          else
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo ""
-              echo "⚠️  WARNING: Database '$TEST_DB_NAME' may already exist (this is OK)"
-            else
-              echo ""
-              echo "❌ ERROR: Failed to create test database"
-              exit $EXIT_CODE
-            fi
-          fi
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: ✅ Verify test database creation
-        env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
-          PGUSER: ${{ secrets.TEST_DB_USER }}
-          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ Verifying test database exists..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
-            echo "✅ VERIFIED: Test database '$TEST_DB_NAME' exists"
-            echo ""
-            echo "📊 Database information:"
-            psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" | grep -E "Name|$TEST_DB_NAME" || true
-          else
-            echo "❌ ERROR: Test database '$TEST_DB_NAME' was not created!"
-            exit 1
-          fi
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🎉 Test database setup completed successfully!"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-  test-integration:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    needs: setup-test-database
-    
-    services:
-      postgres:
-        image: ${{ secrets.POSTGRES_IMAGE }}
-        env:
-          POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
-        ports:
-          - ${{ secrets.TEST_DB_PORT }}:${{ secrets.POSTGRES_INTERNAL_PORT }}
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      
-      redis:
-        image: ${{ secrets.REDIS_IMAGE }}
-        ports:
-          - ${{ secrets.TEST_REDIS_PORT }}:${{ secrets.REDIS_INTERNAL_PORT }}
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: 💾 Cache apt packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt
-          key: apt-${{ runner.os }}-postgresql-client
-          restore-keys: |
-            apt-${{ runner.os }}-
-
-      - name: Install PostgreSQL client
+      - name: 📥 Install PostgreSQL client
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends postgresql-client
 
-      - name: Wait for PostgreSQL service
-        env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
-          PGUSER: ${{ secrets.TEST_DB_USER }}
-          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-        run: |
-          echo "🔍 Checking PostgreSQL service availability..."
-          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
-            echo "⏳ Waiting for PostgreSQL to be ready..."
-            sleep 2
-          done
-          echo "✅ PostgreSQL service is ready"
-
-      - name: Create test database if not exists
-        env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
-          PGUSER: ${{ secrets.TEST_DB_USER }}
-          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
-        run: |
-          echo "🔍 Checking if test database exists..."
-          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
-            echo "✅ Test database '$TEST_DB_NAME' already exists"
-          else
-            echo "📦 Creating test database '$TEST_DB_NAME'..."
-            psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" || echo "⚠️ Database may already exist"
-            echo "✅ Test database '$TEST_DB_NAME' created"
-          fi
-
-      - name: Run database migrations
-        env:
-          NODE_ENV: test
-          DB_HOST: ${{ secrets.TEST_DB_HOST }}
-          DB_PORT: ${{ secrets.TEST_DB_PORT }}
-          DB_USER: ${{ secrets.TEST_DB_USER }}
-          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          DB_NAME: ${{ secrets.TEST_DB_NAME }}
-        run: |
-          echo "🔄 Running database migrations on test database..."
-          npm run migrate
-          echo "✅ Migrations completed"
-
-      - name: Run integration tests
-        env:
-          NODE_ENV: test
-          DB_HOST: ${{ secrets.TEST_DB_HOST }}
-          DB_PORT: ${{ secrets.TEST_DB_PORT }}
-          DB_USER: ${{ secrets.TEST_DB_USER }}
-          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          DB_NAME: ${{ secrets.TEST_DB_NAME }}
-          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
-          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
-        run: |
-          echo "🧪 Running integration tests against test database..."
-          npm run test:integration
-
-  cleanup-test-database:
-    name: 🗑️  Cleanup Test Database
-    runs-on: ubuntu-latest
-    needs: [setup-test-database, test-integration]
-    if: always()
-    
-    services:
-      postgres:
-        image: ${{ secrets.POSTGRES_IMAGE }}
-        env:
-          POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
-        ports:
-          - ${{ secrets.TEST_DB_PORT }}:${{ secrets.POSTGRES_INTERNAL_PORT }}
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    
-    steps:
-      - name: 💾 Cache apt packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt
-          key: apt-${{ runner.os }}-postgresql-client
-          restore-keys: |
-            apt-${{ runner.os }}-
-
-      - name: 📥 Install PostgreSQL client tools
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing PostgreSQL client tools for cleanup..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends postgresql-client
-          echo "✅ PostgreSQL client installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 🔍 Check PostgreSQL service availability
+      - name: 🔍 Verify PostgreSQL service
         env:
           PGHOST: ${{ secrets.TEST_DB_HOST }}
           PGPORT: ${{ secrets.TEST_DB_PORT }}
@@ -372,7 +116,7 @@ jobs:
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔍 Checking PostgreSQL service availability..."
+          echo "🔍 Verifying PostgreSQL service..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           MAX_RETRIES=30
           RETRY_COUNT=0
@@ -388,7 +132,7 @@ jobs:
           echo "✅ PostgreSQL service is ready"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 📊 List databases before cleanup
+      - name: 🆕 Create test database
         env:
           PGHOST: ${{ secrets.TEST_DB_HOST }}
           PGPORT: ${{ secrets.TEST_DB_PORT }}
@@ -397,18 +141,13 @@ jobs:
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Current databases before cleanup:"
+          echo "🆕 Creating test database..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" || true
-          echo ""
-          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
-            echo "✅ Test database '$TEST_DB_NAME' found - will be removed"
-          else
-            echo "⚠️  Test database '$TEST_DB_NAME' not found - may have been already removed"
-          fi
+          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1 || echo "⚠️ Database may already exist (OK)"
+          echo "✅ Test database '$TEST_DB_NAME' created"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 🗑️  Drop test database
+      - name: ✅ Verify test database
         env:
           PGHOST: ${{ secrets.TEST_DB_HOST }}
           PGPORT: ${{ secrets.TEST_DB_PORT }}
@@ -416,32 +155,179 @@ jobs:
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🗑️  Cleaning up test database..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📋 Cleanup details:"
-          echo "   Database to remove: $TEST_DB_NAME"
-          echo "   Command: DROP DATABASE IF EXISTS $TEST_DB_NAME"
-          echo "   Purpose: Free up resources after test execution"
-          echo ""
-          echo "🔨 Executing DROP DATABASE command..."
-          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" 2>&1; then
-            echo ""
-            echo "✅ SUCCESS: Test database '$TEST_DB_NAME' destroyed successfully!"
+          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+            echo "✅ Test database '$TEST_DB_NAME' verified"
           else
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo ""
-              echo "⚠️  WARNING: Database '$TEST_DB_NAME' may not exist (this is OK)"
-            else
-              echo ""
-              echo "❌ ERROR: Failed to drop test database (exit code: $EXIT_CODE)"
-              echo "⚠️  Continuing cleanup process..."
+            echo "❌ Test database '$TEST_DB_NAME' not found"
+            exit 1
+          fi
+
+  test-integration:
+    name: 🔗 Integration Tests
+    runs-on: ubuntu-latest
+    needs: setup-test-database
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
+        ports:
+          - ${{ secrets.TEST_DB_PORT }}:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - ${{ secrets.TEST_REDIS_PORT }}:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-postgresql-client
+          restore-keys: |
+            apt-${{ runner.os }}-
+
+      - name: 📥 Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: 🔍 Wait for PostgreSQL
+        env:
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+        run: |
+          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
+            echo "⏳ Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "✅ PostgreSQL is ready"
+
+      - name: 🆕 Create test database if not exists
+        env:
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
+        run: |
+          if ! psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+            echo "📦 Creating test database '$TEST_DB_NAME'..."
+            psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" || echo "⚠️ Database creation failed"
+          else
+            echo "✅ Test database '$TEST_DB_NAME' already exists"
+          fi
+
+      - name: 🔄 Run migrations
+        env:
+          NODE_ENV: test
+          DB_HOST: ${{ secrets.TEST_DB_HOST }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_USER: ${{ secrets.TEST_DB_USER }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME }}
+        run: |
+          echo "🔄 Running database migrations..."
+          npm run migrate
+          echo "✅ Migrations completed"
+
+      - name: 🧪 Run integration tests
+        env:
+          NODE_ENV: test
+          DB_HOST: ${{ secrets.TEST_DB_HOST }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_USER: ${{ secrets.TEST_DB_USER }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME }}
+          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
+        run: |
+          echo "🧪 Running integration tests..."
+          npm run test:integration
+
+  cleanup-test-database:
+    name: 🗑️ Cleanup Test Database
+    runs-on: ubuntu-latest
+    needs: [setup-test-database, test-integration]
+    if: always()
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
+        ports:
+          - ${{ secrets.TEST_DB_PORT }}:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: 💾 Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: apt-${{ runner.os }}-postgresql-client
+          restore-keys: |
+            apt-${{ runner.os }}-
+
+      - name: 📥 Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: 🔍 Wait for PostgreSQL
+        env:
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+        run: |
+          MAX_RETRIES=30
+          RETRY_COUNT=0
+          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+              echo "❌ PostgreSQL service did not become ready"
+              exit 1
             fi
-          fi
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            sleep 2
+          done
+          echo "✅ PostgreSQL service is ready"
 
-      - name: ✅ Verify test database removal
+      - name: 🗑️ Drop test database
         env:
           PGHOST: ${{ secrets.TEST_DB_HOST }}
           PGPORT: ${{ secrets.TEST_DB_PORT }}
@@ -450,34 +336,14 @@ jobs:
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ Verifying test database has been removed..."
+          echo "🗑️ Cleaning up test database..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
-            echo "⚠️  WARNING: Test database '$TEST_DB_NAME' still exists"
-            echo "📊 Current database list:"
-            psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" || true
-          else
-            echo "✅ VERIFIED: Test database '$TEST_DB_NAME' has been successfully removed"
-          fi
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-      - name: 📊 Show remaining databases
-        env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
-          PGUSER: ${{ secrets.TEST_DB_USER }}
-          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Remaining databases after cleanup:"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" || true
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🎉 Test database cleanup completed!"
+          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" 2>&1 || echo "⚠️ Database may not exist (OK)"
+          echo "✅ Test database cleanup completed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   setup:
-    name: 🔌 Setup and Verify SSH Connection
+    name: 🔌 Setup SSH Connection
     runs-on: ubuntu-latest
     needs: cleanup-test-database
     
@@ -492,37 +358,23 @@ jobs:
 
       - name: 📥 Install SSH tools
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends sshpass
-          echo "✅ sshpass installed successfully"
-          sshpass -V || true
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: 🔍 Test SSH connection
         run: |
           echo "::add-mask::$SSH_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔍 Testing SSH connection to deployment server..."
+          echo "🔍 Testing SSH connection..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📋 Connection details:"
-          echo "   Host: $SSH_HOST"
-          echo "   User: $SSH_USER"
-          echo "   Method: Password authentication"
-          echo ""
-          echo "🔨 Attempting SSH connection..."
           if sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -o ConnectTimeout=10 \
-            $SSH_USER@$SSH_HOST "echo '✅ SSH connection successful' && hostname && uname -a"; then
-            echo ""
-            echo "✅ SUCCESS: SSH connection established successfully!"
+            $SSH_USER@$SSH_HOST "echo '✅ SSH connection successful' && hostname"; then
+            echo "✅ SSH connection established"
           else
-            echo ""
-            echo "❌ ERROR: Failed to establish SSH connection"
+            echo "❌ SSH connection failed"
             exit 1
           fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -543,25 +395,20 @@ jobs:
 
       - name: 📥 Install SSH tools
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 💾 Create and cleanup database backup
+      - name: 💾 Create database backup
         run: |
           echo "::add-mask::$SSH_PASSWORD"
+          echo "::add-mask::$DB_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "💾 Creating database backup and cleaning up old backups..."
+          echo "💾 Creating database backup..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' bash -s" << 'ENDSSH'
-            echo "🔍 Checking PostgreSQL container..."
+            $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' POSTGRES_DEFAULT_DB='$POSTGRES_DEFAULT_DB' bash -s" << 'ENDSSH'
             if docker ps --format '{{.Names}}' | grep -q 'transaction-db'; then
               echo "✅ PostgreSQL container is running"
               
@@ -607,21 +454,16 @@ jobs:
 
       - name: 📥 Install SSH tools
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 📥 Clone repository and prepare archive
+      - name: 📥 Clone repository and create archive
         env:
           REPO_URL: https://github.com/${{ github.repository }}.git
         run: |
           echo "::add-mask::$SSH_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📦 Preparing deployment (clone + archive)..."
+          echo "📦 Preparing deployment..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
@@ -662,15 +504,10 @@ jobs:
 
       - name: 📥 Install SSH tools
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 🚀 Stop, build and start containers
+      - name: 🚀 Build and deploy containers
         run: |
           echo "::add-mask::$SSH_PASSWORD"
           echo "::add-mask::$DB_PASSWORD"
@@ -688,12 +525,10 @@ jobs:
             docker container prune -f || true
             docker volume prune -f || true
             
-            echo "🔨 Building containers with cache optimization..."
+            echo "🔨 Building containers..."
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
-            echo "📥 Pulling base images (using cache)..."
             docker compose pull || true
-            echo "🔨 Building containers (reusing cached layers)..."
             docker compose build --pull --progress=plain
             
             echo "🚀 Starting containers..."
@@ -726,13 +561,8 @@ jobs:
 
       - name: 📥 Install SSH tools
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: ⏳ Wait for services and restore backup
         run: |
@@ -795,19 +625,14 @@ jobs:
 
       - name: 📥 Install SSH tools
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Installing SSH tools (sshpass)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends sshpass
-          echo "✅ sshpass installed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: 🔄 Run migrations and verify status
+      - name: 🔄 Run migrations and verify
         run: |
           echo "::add-mask::$SSH_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔄 Finalizing deployment (migrations + verification)..."
+          echo "🔄 Finalizing deployment..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
@@ -831,26 +656,18 @@ jobs:
     needs: finalize-deployment
     
     steps:
-      - name: 🔍 Verify HTTP redirects to HTTPS
+      - name: 🔍 Verify HTTP redirect
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔍 Verifying HTTP redirects to HTTPS..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📋 Test configuration:"
-          echo "   Domain: $DOMAIN"
-          echo "   Endpoint: /health"
-          echo "   Expected: HTTP redirect (301 or 302) to HTTPS"
-          echo ""
-          echo "🔨 Testing HTTP endpoint..."
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$DOMAIN/health || echo "000")
           echo "   HTTP Status Code: $HTTP_STATUS"
-          echo ""
           
           if [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
-            echo "✅ SUCCESS: HTTP correctly redirects to HTTPS"
+            echo "✅ HTTP correctly redirects to HTTPS"
           else
-            echo "⚠️  WARNING: HTTP returned status $HTTP_STATUS (expected 301 or 302)"
-            echo "   This may indicate Nginx is not configured for HTTPS redirect"
+            echo "⚠️ HTTP returned status $HTTP_STATUS (expected 301 or 302)"
           fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -859,52 +676,33 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔒 Verifying HTTPS endpoint..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📋 Test configuration:"
-          echo "   Domain: $DOMAIN"
-          echo "   Endpoint: /health"
-          echo "   Protocol: HTTPS"
-          echo "   Expected: HTTP 200 OK"
-          echo ""
-          echo "🔨 Testing HTTPS endpoint..."
           HTTPS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN/health || echo "000")
           RESPONSE_TIME=$(curl -s -o /dev/null -w "%{time_total}" https://$DOMAIN/health || echo "0")
           echo "   HTTPS Status Code: $HTTPS_STATUS"
           echo "   Response Time: ${RESPONSE_TIME}s"
-          echo ""
           
           if [ "$HTTPS_STATUS" = "200" ]; then
-            echo "✅ SUCCESS: Deployment successful! HTTPS is working."
+            echo "✅ Deployment successful! HTTPS is working."
           else
-            echo "❌ ERROR: HTTPS endpoint returned status $HTTPS_STATUS (expected 200)"
-            echo "   Deployment verification failed"
+            echo "❌ HTTPS endpoint returned status $HTTPS_STATUS (expected 200)"
             exit 1
           fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: ✅ Verify health endpoint response
+      - name: ✅ Verify health endpoint
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Verifying health endpoint response..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📋 Test configuration:"
-          echo "   Endpoint: https://$DOMAIN/health"
-          echo "   Expected: JSON response with status: UP"
-          echo ""
-          echo "🔨 Fetching health endpoint response..."
           RESPONSE=$(curl -s https://$DOMAIN/health)
           echo "   Response: $RESPONSE"
-          echo ""
           
           if echo "$RESPONSE" | grep -q '"status":"UP"'; then
-            echo "✅ SUCCESS: Health endpoint is responding correctly"
+            echo "✅ Health endpoint is responding correctly"
             echo "   Application status: UP"
           else
-            echo "⚠️  WARNING: Health endpoint response may be incorrect"
-            echo "   Response does not contain expected status: UP"
+            echo "⚠️ Health endpoint response may be incorrect"
           fi
-          echo ""
-          echo "📊 Parsed health check details:"
-          echo "$RESPONSE" | grep -o '"status":"[^"]*"' || echo "   Unable to parse status"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🎉 Deployment verification completed successfully!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

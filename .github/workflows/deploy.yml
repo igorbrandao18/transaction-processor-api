@@ -139,7 +139,4 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST \
-            "echo '✅ SSH connection successful!' && hostname && whoami && pwd"
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $SSH_USER@$SSH_HOST "echo 'SSH OK'"

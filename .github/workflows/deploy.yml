@@ -700,5 +700,119 @@ jobs:
             echo "⚠️ Health endpoint response may be incorrect"
           fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: 🔍 Verify Observability Stack
+        run: |
+          echo "::add-mask::$SSH_PASSWORD"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔍 Verifying Observability Stack..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          sshpass -p "$SSH_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            $SSH_USER@$SSH_HOST << 'ENDSSH'
+            cd /tmp/transaction-processor-api/docker
+            
+            echo "📊 Checking container status..."
+            docker compose ps
+            
+            echo ""
+            echo "🔍 Verifying core services..."
+            
+            # Check PostgreSQL
+            if docker ps --format '{{.Names}}' | grep -q 'transaction-db'; then
+              if docker exec transaction-db pg_isready -U postgres > /dev/null 2>&1; then
+                echo "✅ PostgreSQL is running and healthy"
+              else
+                echo "⚠️ PostgreSQL container is running but not ready"
+              fi
+            else
+              echo "❌ PostgreSQL container is not running"
+            fi
+            
+            # Check Redis
+            if docker ps --format '{{.Names}}' | grep -q 'transaction-redis'; then
+              if docker exec transaction-redis redis-cli ping > /dev/null 2>&1; then
+                echo "✅ Redis is running and healthy"
+              else
+                echo "⚠️ Redis container is running but not ready"
+              fi
+            else
+              echo "❌ Redis container is not running"
+            fi
+            
+            # Check Application
+            if docker ps --format '{{.Names}}' | grep -q 'transaction-api'; then
+              echo "✅ Application container is running"
+              # Check if app is responding
+              if docker exec transaction-api node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" 2>/dev/null; then
+                echo "✅ Application health check passed"
+              else
+                echo "⚠️ Application container is running but health check failed"
+              fi
+            else
+              echo "❌ Application container is not running"
+            fi
+            
+            echo ""
+            echo "📈 Checking Observability Stack (if enabled)..."
+            
+            # Check Prometheus (if observability profile is enabled)
+            if docker ps --format '{{.Names}}' | grep -q 'transaction-prometheus'; then
+              echo "✅ Prometheus container is running"
+              # Try to check Prometheus health
+              if docker exec transaction-prometheus wget -q -O - http://localhost:9090/-/healthy > /dev/null 2>&1; then
+                echo "✅ Prometheus is healthy"
+              else
+                echo "⚠️ Prometheus container is running but health check failed"
+              fi
+            else
+              echo "ℹ️ Prometheus not running (observability profile not enabled)"
+            fi
+            
+            # Check Grafana (if observability profile is enabled)
+            if docker ps --format '{{.Names}}' | grep -q 'transaction-grafana'; then
+              echo "✅ Grafana container is running"
+              # Try to check Grafana health
+              if docker exec transaction-grafana wget -q -O - http://localhost:3000/api/health > /dev/null 2>&1; then
+                echo "✅ Grafana is healthy"
+              else
+                echo "⚠️ Grafana container is running but health check failed"
+              fi
+            else
+              echo "ℹ️ Grafana not running (observability profile not enabled)"
+            fi
+            
+            # Check cAdvisor (if observability profile is enabled)
+            if docker ps --format '{{.Names}}' | grep -q 'transaction-cadvisor'; then
+              echo "✅ cAdvisor container is running"
+              # Try to check cAdvisor health
+              if docker exec transaction-cadvisor wget -q -O - http://localhost:8080/healthz > /dev/null 2>&1; then
+                echo "✅ cAdvisor is healthy"
+              else
+                echo "⚠️ cAdvisor container is running but health check failed"
+              fi
+            else
+              echo "ℹ️ cAdvisor not running (observability profile not enabled)"
+            fi
+            
+            echo ""
+            echo "📋 Container resource usage:"
+            docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" | head -10 || true
+            
+            echo ""
+            echo "🔒 Exposed ports check:"
+            docker ps --format "table {{.Names}}\t{{.Ports}}" | grep -E "transaction-" || true
+            
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          ENDSSH
+
+      - name: 🎉 Deployment Summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🎉 Deployment verification completed successfully!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Application URL: https://$DOMAIN"
+          echo "✅ Health Check: https://$DOMAIN/health"
+          echo "✅ API Documentation: https://$DOMAIN/api/docs"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

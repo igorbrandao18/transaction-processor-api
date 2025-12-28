@@ -739,7 +739,7 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' bash -s" << 'ENDSSH'
+            $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' TEST_POSTGRES_DB='$TEST_POSTGRES_DB' bash -s" << 'ENDSSH'
             echo "⏳ Waiting for PostgreSQL..."
             timeout=60
             elapsed=0

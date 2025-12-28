@@ -32,10 +32,10 @@ jobs:
 
       - name: Start services with Docker Compose
         env:
-          DOCKER_COMPOSE_DIR: ${{ secrets.DOCKER_COMPOSE_DIR || 'docker' }}
-          POSTGRES_SERVICE: ${{ secrets.POSTGRES_SERVICE || 'postgres' }}
-          REDIS_SERVICE: ${{ secrets.REDIS_SERVICE || 'redis' }}
-          SERVICE_START_WAIT: ${{ secrets.SERVICE_START_WAIT || '15' }}
+          DOCKER_COMPOSE_DIR: ${{ secrets.DOCKER_COMPOSE_DIR }}
+          POSTGRES_SERVICE: ${{ secrets.POSTGRES_SERVICE }}
+          REDIS_SERVICE: ${{ secrets.REDIS_SERVICE }}
+          SERVICE_START_WAIT: ${{ secrets.SERVICE_START_WAIT }}
         run: |
           cd $DOCKER_COMPOSE_DIR
           docker compose up -d $POSTGRES_SERVICE $REDIS_SERVICE
@@ -44,12 +44,14 @@ jobs:
 
       - name: Create test database
         env:
+          DOCKER_COMPOSE_DIR: ${{ secrets.DOCKER_COMPOSE_DIR }}
+          POSTGRES_SERVICE: ${{ secrets.POSTGRES_SERVICE }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
           TEST_DB_USER: ${{ secrets.TEST_DB_USER }}
           TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
-          cd docker
-          docker compose exec -T postgres psql -U $TEST_DB_USER -c "CREATE DATABASE $TEST_DB_NAME;" || echo "Database may already exist"
+          cd $DOCKER_COMPOSE_DIR
+          docker compose exec -T $POSTGRES_SERVICE psql -U $TEST_DB_USER -c "CREATE DATABASE $TEST_DB_NAME;" || echo "Database may already exist"
         continue-on-error: true
 
       - name: Install dependencies

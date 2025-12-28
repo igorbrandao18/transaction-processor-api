@@ -15,6 +15,10 @@ until docker exec transaction-db-test pg_isready -U postgres > /dev/null 2>&1; d
   sleep 2
 done
 
+echo "🗑️ Dropping and recreating test database..."
+docker exec transaction-db-test psql -U postgres -c "DROP DATABASE IF EXISTS transactions_db_test;" || true
+docker exec transaction-db-test psql -U postgres -c "CREATE DATABASE transactions_db_test;" || true
+
 echo "🔄 Running migrations..."
 NODE_ENV=test \
 DB_HOST=localhost \

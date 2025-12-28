@@ -216,12 +216,12 @@ jobs:
 
       - name: 🔍 Wait for PostgreSQL
         env:
-          PGHOST: ${{ secrets.TEST_DB_HOST }}
-          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGHOST: localhost
+          PGPORT: 5432
           PGUSER: ${{ secrets.TEST_DB_USER }}
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
-          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
+          until pg_isready -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }}; do
             echo "⏳ Waiting for PostgreSQL..."
             sleep 2
           done

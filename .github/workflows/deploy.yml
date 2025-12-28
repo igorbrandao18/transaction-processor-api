@@ -92,6 +92,13 @@ jobs:
         run: npm run test:cov
         continue-on-error: true
 
+      - name: Drop test database
+        if: always()
+        run: |
+          cd docker
+          docker compose exec -T postgres psql -U postgres -c "DROP DATABASE IF EXISTS transactions_db_test;" || echo "Database may not exist"
+        continue-on-error: true
+
       - name: Stop services
         if: always()
         run: |

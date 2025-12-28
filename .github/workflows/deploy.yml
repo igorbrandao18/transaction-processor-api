@@ -12,7 +12,7 @@ env:
   DB_NAME: ${{ secrets.DB_NAME || 'transactions_db' }}
   DB_USER: ${{ secrets.DB_USER || 'postgres' }}
   DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
-  DOMAIN: ${{ secrets.DOMAIN || 'challenge.brandaodeveloper.com.br' }}
+  DOMAIN: ${{ secrets.DOMAIN }}
 
 jobs:
   lint:
@@ -848,7 +848,6 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔒 Verifying HTTPS endpoint..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          DOMAIN="${DOMAIN:-challenge.brandaodeveloper.com.br}"
           echo "📋 Test configuration:"
           echo "   Domain: $DOMAIN"
           echo "   Endpoint: /health"
@@ -876,7 +875,6 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Verifying health endpoint response..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          DOMAIN="${DOMAIN:-challenge.brandaodeveloper.com.br}"
           echo "📋 Test configuration:"
           echo "   Endpoint: https://$DOMAIN/health"
           echo "   Expected: JSON response with status: UP"

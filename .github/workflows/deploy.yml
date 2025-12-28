@@ -207,7 +207,7 @@ jobs:
     name: 🔗 Integration Tests
     runs-on: ubuntu-latest
     needs: setup-test-database
-    timeout-minutes: 15
+    timeout-minutes: 5
     
     services:
       postgres:
@@ -299,7 +299,7 @@ jobs:
           echo "✅ Migrations completed"
 
       - name: 🧪 Run integration tests (optimized)
-        timeout-minutes: 10
+        timeout-minutes: 3
         env:
           NODE_ENV: test
           DB_HOST: localhost
@@ -328,7 +328,7 @@ jobs:
     name: 🎭 E2E Tests
     runs-on: ubuntu-latest
     needs: setup-test-database
-    timeout-minutes: 15
+    timeout-minutes: 5
     
     services:
       postgres:
@@ -420,7 +420,7 @@ jobs:
           echo "✅ Migrations completed"
 
       - name: 🎭 Run E2E tests (optimized)
-        timeout-minutes: 10
+        timeout-minutes: 3
         env:
           NODE_ENV: test
           DB_HOST: localhost

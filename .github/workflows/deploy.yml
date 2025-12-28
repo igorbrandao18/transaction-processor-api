@@ -9,10 +9,17 @@ env:
   SSH_HOST: ${{ secrets.SSH_HOST }}
   SSH_USER: ${{ secrets.SSH_USER }}
   SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-  DB_NAME: ${{ secrets.DB_NAME || 'transactions_db' }}
-  DB_USER: ${{ secrets.DB_USER || 'postgres' }}
-  DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
+  DB_NAME: ${{ secrets.DB_NAME }}
+  DB_USER: ${{ secrets.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
   DOMAIN: ${{ secrets.DOMAIN }}
+  TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
+  TEST_DB_USER: ${{ secrets.TEST_DB_USER }}
+  TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+  TEST_DB_HOST: ${{ secrets.TEST_DB_HOST }}
+  TEST_DB_PORT: ${{ secrets.TEST_DB_PORT }}
+  TEST_REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
+  TEST_REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
 
 jobs:
   lint:
@@ -66,11 +73,11 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: postgres
         ports:
-          - 5432:5432
+          - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -98,24 +105,24 @@ jobs:
 
       - name: 🔍 Check PostgreSQL service availability
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔍 Checking PostgreSQL service availability..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📍 Connection details:"
-          echo "   Host: localhost"
-          echo "   Port: 5432"
-          echo "   User: postgres"
+          echo "   Host: ${{ secrets.TEST_DB_HOST }}"
+          echo "   Port: ${{ secrets.TEST_DB_PORT }}"
+          echo "   User: ${{ secrets.TEST_DB_USER }}"
           echo "   Database: postgres (default)"
           echo ""
           echo "⏳ Waiting for PostgreSQL to accept connections..."
           MAX_RETRIES=30
           RETRY_COUNT=0
-          until pg_isready -h localhost -p 5432 -U postgres; do
+          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
             RETRY_COUNT=$((RETRY_COUNT + 1))
             if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
               echo "❌ PostgreSQL service did not become ready after $MAX_RETRIES attempts"
@@ -137,7 +144,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📊 Current databases before test database creation:"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h localhost -p 5432 -U postgres -c "\l" || true
+          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" || true
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: 🆕 Create test database
@@ -146,7 +153,7 @@ jobs:
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
-          TEST_DB_NAME: transactions_db_test
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🆕 Creating test database..."
@@ -158,7 +165,7 @@ jobs:
           echo "   Purpose: Integration tests execution"
           echo ""
           echo "🔨 Executing CREATE DATABASE command..."
-          if psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1; then
+          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1; then
             echo ""
             echo "✅ SUCCESS: Test database '$TEST_DB_NAME' created successfully!"
           else
@@ -180,16 +187,16 @@ jobs:
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
-          TEST_DB_NAME: transactions_db_test
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Verifying test database exists..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          if psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
             echo "✅ VERIFIED: Test database '$TEST_DB_NAME' exists"
             echo ""
             echo "📊 Database information:"
-            psql -h localhost -p 5432 -U postgres -c "\l" | grep -E "Name|$TEST_DB_NAME" || true
+            psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" | grep -E "Name|$TEST_DB_NAME" || true
           else
             echo "❌ ERROR: Test database '$TEST_DB_NAME' was not created!"
             exit 1
@@ -207,11 +214,11 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: postgres
         ports:
-          - 5432:5432
+          - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -221,7 +228,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - 6379:6379
+          - ${{ secrets.TEST_REDIS_PORT }}:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -262,7 +269,7 @@ jobs:
           PGPASSWORD: postgres
         run: |
           echo "🔍 Checking PostgreSQL service availability..."
-          until pg_isready -h localhost -p 5432 -U postgres; do
+          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
             echo "⏳ Waiting for PostgreSQL to be ready..."
             sleep 2
           done
@@ -274,25 +281,25 @@ jobs:
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
-          TEST_DB_NAME: transactions_db_test
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "🔍 Checking if test database exists..."
-          if psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
             echo "✅ Test database '$TEST_DB_NAME' already exists"
           else
             echo "📦 Creating test database '$TEST_DB_NAME'..."
-            psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE $TEST_DB_NAME;" || echo "⚠️ Database may already exist"
+            psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" || echo "⚠️ Database may already exist"
             echo "✅ Test database '$TEST_DB_NAME' created"
           fi
 
       - name: Run database migrations
         env:
           NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: transactions_db_test
+          DB_HOST: ${{ secrets.TEST_DB_HOST }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_USER: ${{ secrets.TEST_DB_USER }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "🔄 Running database migrations on test database..."
           npm run migrate
@@ -301,13 +308,13 @@ jobs:
       - name: Run integration tests
         env:
           NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: transactions_db_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
+          DB_HOST: ${{ secrets.TEST_DB_HOST }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_USER: ${{ secrets.TEST_DB_USER }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME }}
+          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
         run: |
           echo "🧪 Running integration tests against test database..."
           npm run test:integration
@@ -322,11 +329,11 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: postgres
         ports:
-          - 5432:5432
+          - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -354,17 +361,17 @@ jobs:
 
       - name: 🔍 Check PostgreSQL service availability
         env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
+          PGHOST: ${{ secrets.TEST_DB_HOST }}
+          PGPORT: ${{ secrets.TEST_DB_PORT }}
+          PGUSER: ${{ secrets.TEST_DB_USER }}
+          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔍 Checking PostgreSQL service availability..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           MAX_RETRIES=30
           RETRY_COUNT=0
-          until pg_isready -h localhost -p 5432 -U postgres; do
+          until pg_isready -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }}; do
             RETRY_COUNT=$((RETRY_COUNT + 1))
             if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
               echo "❌ PostgreSQL service did not become ready"
@@ -382,14 +389,14 @@ jobs:
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
-          TEST_DB_NAME: transactions_db_test
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📊 Current databases before cleanup:"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h localhost -p 5432 -U postgres -c "\l" || true
+          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" || true
           echo ""
-          if psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
             echo "✅ Test database '$TEST_DB_NAME' found - will be removed"
           else
             echo "⚠️  Test database '$TEST_DB_NAME' not found - may have been already removed"
@@ -402,7 +409,7 @@ jobs:
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
-          TEST_DB_NAME: transactions_db_test
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🗑️  Cleaning up test database..."
@@ -413,7 +420,7 @@ jobs:
           echo "   Purpose: Free up resources after test execution"
           echo ""
           echo "🔨 Executing DROP DATABASE command..."
-          if psql -h localhost -p 5432 -U postgres -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" 2>&1; then
+          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" 2>&1; then
             echo ""
             echo "✅ SUCCESS: Test database '$TEST_DB_NAME' destroyed successfully!"
           else
@@ -435,15 +442,15 @@ jobs:
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
-          TEST_DB_NAME: transactions_db_test
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Verifying test database has been removed..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          if psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+          if psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
             echo "⚠️  WARNING: Test database '$TEST_DB_NAME' still exists"
             echo "📊 Current database list:"
-            psql -h localhost -p 5432 -U postgres -c "\l" || true
+            psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" || true
           else
             echo "✅ VERIFIED: Test database '$TEST_DB_NAME' has been successfully removed"
           fi
@@ -459,7 +466,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📊 Remaining databases after cleanup:"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h localhost -p 5432 -U postgres -c "\l" || true
+          psql -h ${{ secrets.TEST_DB_HOST }} -p ${{ secrets.TEST_DB_PORT }} -U ${{ secrets.TEST_DB_USER }} -c "\l" || true
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🎉 Test database cleanup completed!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

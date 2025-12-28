@@ -102,6 +102,20 @@ jobs:
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
+      - name: Wait for PostgreSQL service
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: |
+          echo "🔍 Checking PostgreSQL service availability..."
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "⏳ Waiting for PostgreSQL to be ready..."
+            sleep 2
+          done
+          echo "✅ PostgreSQL service is ready"
+
       - name: Create test database
         env:
           PGHOST: localhost
@@ -109,11 +123,14 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: postgres
         run: |
-          until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "Waiting for PostgreSQL..."
-            sleep 2
-          done
-          psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE transactions_db_test;" || echo "Database may already exist"
+          echo "📦 Creating test database: transactions_db_test"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE transactions_db_test;" && \
+            echo "✅ Test database 'transactions_db_test' created successfully" || \
+            echo "⚠️  Database may already exist (this is OK)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Database list:"
+          psql -h localhost -p 5432 -U postgres -c "\l" | grep -E "Name|transactions_db_test" || true
 
       - name: Run database migrations
         env:
@@ -123,7 +140,10 @@ jobs:
           DB_USER: postgres
           DB_PASSWORD: postgres
           DB_NAME: transactions_db_test
-        run: npm run migrate
+        run: |
+          echo "🔄 Running database migrations on test database..."
+          npm run migrate
+          echo "✅ Migrations completed"
 
       - name: Run integration tests
         env:
@@ -135,7 +155,9 @@ jobs:
           DB_NAME: transactions_db_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
-        run: npm run test:integration
+        run: |
+          echo "🧪 Running integration tests against test database..."
+          npm run test:integration
 
       - name: Drop test database
         if: always()
@@ -145,8 +167,14 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -p 5432 -U postgres -c "DROP DATABASE IF EXISTS transactions_db_test;" || true
-          echo "✅ Test database destroyed"
+          echo "🗑️  Cleaning up test database..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          psql -h localhost -p 5432 -U postgres -c "DROP DATABASE IF EXISTS transactions_db_test;" && \
+            echo "✅ Test database 'transactions_db_test' destroyed successfully" || \
+            echo "⚠️  Database may not exist (this is OK)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Remaining databases:"
+          psql -h localhost -p 5432 -U postgres -c "\l" | grep -E "Name|postgres|template" || true
 
   setup:
     name: Setup and Verify SSH Connection

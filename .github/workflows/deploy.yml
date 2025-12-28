@@ -39,7 +39,8 @@ jobs:
 
       - name: Create test database
         run: |
-          docker compose -f docker/docker-compose.yml exec -T postgres psql -U postgres -c "CREATE DATABASE transactions_db_test;" || echo "Database may already exist"
+          cd docker
+          docker compose exec -T postgres psql -U postgres -c "CREATE DATABASE transactions_db_test;" || echo "Database may already exist"
         continue-on-error: true
 
       - name: Install dependencies

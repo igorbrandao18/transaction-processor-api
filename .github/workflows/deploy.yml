@@ -57,9 +57,63 @@ jobs:
           NODE_ENV: test
         run: npm run test:unit
 
+  setup-test-database:
+    name: Setup Test Database
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for PostgreSQL service
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: |
+          echo "🔍 Checking PostgreSQL service availability..."
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "⏳ Waiting for PostgreSQL to be ready..."
+            sleep 2
+          done
+          echo "✅ PostgreSQL service is ready"
+
+      - name: Create test database
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: |
+          echo "📦 Creating test database: transactions_db_test"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE transactions_db_test;" && \
+            echo "✅ Test database 'transactions_db_test' created successfully" || \
+            echo "⚠️  Database may already exist (this is OK)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Database list:"
+          psql -h localhost -p 5432 -U postgres -c "\l" | grep -E "Name|transactions_db_test" || true
+
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-latest
+    needs: setup-test-database
     
     services:
       postgres:
@@ -116,21 +170,17 @@ jobs:
           done
           echo "✅ PostgreSQL service is ready"
 
-      - name: Create test database
+      - name: Verify test database exists
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
         run: |
-          echo "📦 Creating test database: transactions_db_test"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE transactions_db_test;" && \
-            echo "✅ Test database 'transactions_db_test' created successfully" || \
-            echo "⚠️  Database may already exist (this is OK)"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 Database list:"
-          psql -h localhost -p 5432 -U postgres -c "\l" | grep -E "Name|transactions_db_test" || true
+          echo "🔍 Verifying test database exists..."
+          psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw transactions_db_test && \
+            echo "✅ Test database 'transactions_db_test' exists" || \
+            (echo "❌ Test database not found!" && exit 1)
 
       - name: Run database migrations
         env:
@@ -159,8 +209,46 @@ jobs:
           echo "🧪 Running integration tests against test database..."
           npm run test:integration
 
+  cleanup-test-database:
+    name: Cleanup Test Database
+    runs-on: ubuntu-latest
+    needs: [setup-test-database, test-integration]
+    if: always()
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for PostgreSQL service
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: |
+          echo "🔍 Checking PostgreSQL service availability..."
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "⏳ Waiting for PostgreSQL to be ready..."
+            sleep 2
+          done
+          echo "✅ PostgreSQL service is ready"
+
       - name: Drop test database
-        if: always()
         env:
           PGHOST: localhost
           PGPORT: 5432

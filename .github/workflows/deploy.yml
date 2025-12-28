@@ -23,6 +23,8 @@ env:
   POSTGRES_DEFAULT_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
   POSTGRES_INTERNAL_PORT: ${{ secrets.POSTGRES_INTERNAL_PORT }}
   REDIS_INTERNAL_PORT: ${{ secrets.REDIS_INTERNAL_PORT }}
+  POSTGRES_IMAGE: ${{ secrets.POSTGRES_IMAGE }}
+  REDIS_IMAGE: ${{ secrets.REDIS_IMAGE }}
 
 jobs:
   lint:
@@ -74,7 +76,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:15-alpine
+        image: ${{ env.POSTGRES_IMAGE }}
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
@@ -215,7 +217,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:15-alpine
+        image: ${{ env.POSTGRES_IMAGE }}
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
@@ -229,7 +231,7 @@ jobs:
           --health-retries 5
       
       redis:
-        image: redis:7-alpine
+        image: ${{ env.REDIS_IMAGE }}
         ports:
           - ${{ secrets.TEST_REDIS_PORT }}:${{ env.REDIS_INTERNAL_PORT }}
         options: >-
@@ -330,7 +332,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:15-alpine
+        image: ${{ env.POSTGRES_IMAGE }}
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}

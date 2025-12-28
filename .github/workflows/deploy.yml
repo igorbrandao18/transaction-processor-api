@@ -207,7 +207,7 @@ jobs:
     name: 🔗 Integration Tests
     runs-on: ubuntu-latest
     needs: setup-test-database
-    timeout-minutes: 20
+    timeout-minutes: 15
     
     services:
       postgres:
@@ -220,9 +220,9 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 3
       
       redis:
         image: redis:7-alpine
@@ -230,9 +230,9 @@ jobs:
           - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 3
     
     steps:
       - name: 📥 Checkout code
@@ -260,18 +260,18 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends postgresql-client
 
-      - name: 🔍 Wait for PostgreSQL
+      - name: 🔍 Wait for services (optimized)
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: ${{ secrets.TEST_DB_USER }}
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
-          until pg_isready -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }}; do
-            echo "⏳ Waiting for PostgreSQL..."
-            sleep 2
-          done
+          echo "⏳ Waiting for PostgreSQL (max 15s)..."
+          timeout 15 bash -c 'until pg_isready -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }}; do sleep 1; done' || exit 1
           echo "✅ PostgreSQL is ready"
+          
+          echo "✅ Redis is ready (service health check)"
 
       - name: 🆕 Create test database if not exists
         env:
@@ -281,14 +281,11 @@ jobs:
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
-          if ! psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
-            echo "📦 Creating test database '$TEST_DB_NAME'..."
-            psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" || echo "⚠️ Database creation failed"
-          else
-            echo "✅ Test database '$TEST_DB_NAME' already exists"
-          fi
+          psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1 | grep -v "already exists" || true
+          echo "✅ Test database ready"
 
       - name: 🔄 Run migrations
+        timeout-minutes: 3
         env:
           NODE_ENV: test
           DB_HOST: localhost
@@ -301,8 +298,8 @@ jobs:
           npm run migrate
           echo "✅ Migrations completed"
 
-      - name: 🧪 Run integration tests with retry
-        timeout-minutes: 15
+      - name: 🧪 Run integration tests (optimized)
+        timeout-minutes: 10
         env:
           NODE_ENV: test
           DB_HOST: localhost
@@ -314,21 +311,8 @@ jobs:
           REDIS_PORT: 6379
         run: |
           echo "🧪 Running integration tests..."
-          MAX_RETRIES=3
-          RETRY_COUNT=0
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if npm run test:integration; then
-              echo "✅ Integration tests passed"
-              exit 0
-            fi
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-              echo "⚠️ Integration tests failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
-              sleep 5
-            fi
-          done
-          echo "❌ Integration tests failed after $MAX_RETRIES attempts"
-          exit 1
+          npm run test:integration || (echo "❌ Integration tests failed" && exit 1)
+          echo "✅ Integration tests passed"
 
       - name: 📊 Upload integration test results
         if: always()
@@ -344,7 +328,7 @@ jobs:
     name: 🎭 E2E Tests
     runs-on: ubuntu-latest
     needs: setup-test-database
-    timeout-minutes: 20
+    timeout-minutes: 15
     
     services:
       postgres:
@@ -357,9 +341,9 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 3
       
       redis:
         image: redis:7-alpine
@@ -367,9 +351,9 @@ jobs:
           - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 3
     
     steps:
       - name: 📥 Checkout code
@@ -397,18 +381,18 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends postgresql-client
 
-      - name: 🔍 Wait for PostgreSQL
+      - name: 🔍 Wait for services (optimized)
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: ${{ secrets.TEST_DB_USER }}
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
         run: |
-          until pg_isready -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }}; do
-            echo "⏳ Waiting for PostgreSQL..."
-            sleep 2
-          done
+          echo "⏳ Waiting for PostgreSQL (max 15s)..."
+          timeout 15 bash -c 'until pg_isready -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }}; do sleep 1; done' || exit 1
           echo "✅ PostgreSQL is ready"
+          
+          echo "✅ Redis is ready (service health check)"
 
       - name: 🆕 Create test database if not exists
         env:
@@ -418,15 +402,11 @@ jobs:
           PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
         run: |
-          if ! psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
-            echo "📦 Creating test database '$TEST_DB_NAME'..."
-            psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" || echo "⚠️ Database creation failed"
-          else
-            echo "✅ Test database '$TEST_DB_NAME' already exists"
-          fi
+          psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1 | grep -v "already exists" || true
+          echo "✅ Test database ready"
 
       - name: 🔄 Run migrations
-        timeout-minutes: 5
+        timeout-minutes: 3
         env:
           NODE_ENV: test
           DB_HOST: localhost
@@ -439,8 +419,8 @@ jobs:
           npm run migrate
           echo "✅ Migrations completed"
 
-      - name: 🎭 Run E2E tests with retry
-        timeout-minutes: 15
+      - name: 🎭 Run E2E tests (optimized)
+        timeout-minutes: 10
         env:
           NODE_ENV: test
           DB_HOST: localhost
@@ -452,21 +432,8 @@ jobs:
           REDIS_PORT: 6379
         run: |
           echo "🎭 Running E2E tests..."
-          MAX_RETRIES=3
-          RETRY_COUNT=0
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if npm run test:e2e; then
-              echo "✅ E2E tests passed"
-              exit 0
-            fi
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-              echo "⚠️ E2E tests failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
-              sleep 5
-            fi
-          done
-          echo "❌ E2E tests failed after $MAX_RETRIES attempts"
-          exit 1
+          npm run test:e2e || (echo "❌ E2E tests failed" && exit 1)
+          echo "✅ E2E tests passed"
 
       - name: 📊 Upload E2E test results
         if: always()

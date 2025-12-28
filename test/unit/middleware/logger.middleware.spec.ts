@@ -1,20 +1,9 @@
 import { LoggerMiddleware } from '@middleware/logger.middleware';
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '@config/logger.config';
+import { httpRequestDuration, httpRequestTotal } from '@config/metrics.config';
 
 jest.mock('@config/logger.config');
-jest.mock('@config/metrics.config', () => ({
-  httpRequestDuration: {
-    labels: jest.fn().mockReturnThis(),
-    observe: jest.fn(),
-  },
-  httpRequestTotal: {
-    labels: jest.fn().mockReturnThis(),
-    inc: jest.fn(),
-  },
-}));
-
-// Mock metrics to avoid unused variable errors
 jest.mock('@config/metrics.config', () => ({
   httpRequestDuration: {
     labels: jest.fn().mockReturnThis(),
@@ -31,25 +20,10 @@ describe('LoggerMiddleware', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let mockNext: NextFunction;
-  let mockHttpRequestDuration: jest.Mocked<any>;
-  let mockHttpRequestTotal: jest.Mocked<any>;
 
   beforeEach(() => {
     middleware = new LoggerMiddleware();
     mockNext = jest.fn();
-
-    mockHttpRequestDuration = {
-      labels: jest.fn().mockReturnThis(),
-      observe: jest.fn(),
-    };
-
-    mockHttpRequestTotal = {
-      labels: jest.fn().mockReturnThis(),
-      inc: jest.fn(),
-    };
-
-    (httpRequestDuration as any) = mockHttpRequestDuration;
-    (httpRequestTotal as any) = mockHttpRequestTotal;
 
     mockRequest = {
       method: 'GET',
@@ -129,19 +103,19 @@ describe('LoggerMiddleware', () => {
           duration: expect.stringMatching(/\d+ms/),
         });
 
-        expect(mockHttpRequestDuration.labels).toHaveBeenCalledWith(
+        expect(httpRequestDuration.labels).toHaveBeenCalledWith(
           'GET',
           '/transactions',
           '200',
         );
-        expect(mockHttpRequestDuration.observe).toHaveBeenCalled();
+        expect(httpRequestDuration.observe).toHaveBeenCalled();
 
-        expect(mockHttpRequestTotal.labels).toHaveBeenCalledWith(
+        expect(httpRequestTotal.labels).toHaveBeenCalledWith(
           'GET',
           '/transactions',
           '200',
         );
-        expect(mockHttpRequestTotal.inc).toHaveBeenCalled();
+        expect(httpRequestTotal.inc).toHaveBeenCalled();
 
         done();
       }, 10);
@@ -163,7 +137,7 @@ describe('LoggerMiddleware', () => {
       finishCallback();
 
       setTimeout(() => {
-        expect(mockHttpRequestTotal.labels).toHaveBeenCalledWith(
+        expect(httpRequestTotal.labels).toHaveBeenCalledWith(
           'GET',
           '/transactions',
           '404',
@@ -187,7 +161,8 @@ describe('LoggerMiddleware', () => {
         finishCallback();
 
         setTimeout(() => {
-          const duration = mockHttpRequestDuration.observe.mock.calls[0][0];
+          const duration = (httpRequestDuration.observe as jest.Mock).mock
+            .calls[0][0];
           expect(duration).toBeGreaterThanOrEqual(0);
           expect(duration).toBeLessThan(1); // Should be in seconds
           done();

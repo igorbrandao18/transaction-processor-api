@@ -32,9 +32,17 @@ describe('DatabaseConfig', () => {
   afterAll(async () => {
     // Close pool to prevent Jest from hanging
     if (dbPool && typeof dbPool.end === 'function') {
-      await dbPool.end().catch(() => {
+      try {
+        const result = dbPool.end();
+        // If result is a Promise, await it
+        if (result !== null && result !== undefined) {
+          await Promise.resolve(result).catch(() => {
+            // Ignore errors on cleanup
+          });
+        }
+      } catch {
         // Ignore errors on cleanup
-      });
+      }
     }
   });
 

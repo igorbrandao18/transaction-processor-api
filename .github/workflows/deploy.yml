@@ -85,7 +85,7 @@ jobs:
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
+          POSTGRES_DB: postgres
         ports:
           - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-
@@ -173,7 +173,7 @@ jobs:
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
+          POSTGRES_DB: postgres
         ports:
           - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-
@@ -285,7 +285,7 @@ jobs:
         env:
           POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
+          POSTGRES_DB: postgres
         ports:
           - ${{ secrets.TEST_DB_PORT }}:5432
         options: >-

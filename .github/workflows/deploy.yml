@@ -21,6 +21,8 @@ env:
   TEST_REDIS_HOST: ${{ secrets.TEST_REDIS_HOST }}
   TEST_REDIS_PORT: ${{ secrets.TEST_REDIS_PORT }}
   POSTGRES_DEFAULT_DB: ${{ secrets.POSTGRES_DEFAULT_DB }}
+  POSTGRES_INTERNAL_PORT: ${{ secrets.POSTGRES_INTERNAL_PORT }}
+  REDIS_INTERNAL_PORT: ${{ secrets.REDIS_INTERNAL_PORT }}
 
 jobs:
   lint:
@@ -78,7 +80,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: ${{ env.POSTGRES_DEFAULT_DB }}
         ports:
-          - ${{ secrets.TEST_DB_PORT }}:5432
+          - ${{ secrets.TEST_DB_PORT }}:${{ env.POSTGRES_INTERNAL_PORT }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -219,7 +221,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: ${{ env.POSTGRES_DEFAULT_DB }}
         ports:
-          - ${{ secrets.TEST_DB_PORT }}:5432
+          - ${{ secrets.TEST_DB_PORT }}:${{ env.POSTGRES_INTERNAL_PORT }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -229,7 +231,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - ${{ secrets.TEST_REDIS_PORT }}:6379
+          - ${{ secrets.TEST_REDIS_PORT }}:${{ env.REDIS_INTERNAL_PORT }}
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -334,7 +336,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: ${{ env.POSTGRES_DEFAULT_DB }}
         ports:
-          - ${{ secrets.TEST_DB_PORT }}:5432
+          - ${{ secrets.TEST_DB_PORT }}:${{ env.POSTGRES_INTERNAL_PORT }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s

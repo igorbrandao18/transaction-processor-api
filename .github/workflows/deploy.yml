@@ -38,9 +38,13 @@ jobs:
           docker compose ps
 
       - name: Create test database
+        env:
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
+          TEST_DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
+          TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
         run: |
           cd docker
-          docker compose exec -T postgres psql -U postgres -c "CREATE DATABASE transactions_db_test;" || echo "Database may already exist"
+          docker compose exec -T postgres psql -U $TEST_DB_USER -c "CREATE DATABASE $TEST_DB_NAME;" || echo "Database may already exist"
         continue-on-error: true
 
       - name: Install dependencies
@@ -50,11 +54,11 @@ jobs:
         run: npm run migrate
         env:
           NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: transactions_db_test
+          DB_HOST: ${{ secrets.TEST_DB_HOST || 'localhost' }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT || '5432' }}
+          DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
 
       - name: Run linter
         run: npm run lint:check
@@ -68,25 +72,25 @@ jobs:
         run: npm run test:integration
         env:
           NODE_ENV: test
-          DB_HOST: ${{ secrets.DB_HOST || 'localhost' }}
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
-          DB_NAME: transactions_db_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
+          DB_HOST: ${{ secrets.TEST_DB_HOST || 'localhost' }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT || '5432' }}
+          DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
+          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST || 'localhost' }}
+          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT || '6379' }}
 
       - name: Run E2E tests
         run: npm run test:e2e
         env:
           NODE_ENV: test
-          DB_HOST: ${{ secrets.DB_HOST || 'localhost' }}
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
-          DB_NAME: transactions_db_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
+          DB_HOST: ${{ secrets.TEST_DB_HOST || 'localhost' }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT || '5432' }}
+          DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
+          REDIS_HOST: ${{ secrets.TEST_REDIS_HOST || 'localhost' }}
+          REDIS_PORT: ${{ secrets.TEST_REDIS_PORT || '6379' }}
 
       - name: Generate coverage report
         run: npm run test:cov
@@ -94,9 +98,12 @@ jobs:
 
       - name: Drop test database
         if: always()
+        env:
+          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME || 'transactions_db_test' }}
+          TEST_DB_USER: ${{ secrets.TEST_DB_USER || 'postgres' }}
         run: |
           cd docker
-          docker compose exec -T postgres psql -U postgres -c "DROP DATABASE IF EXISTS transactions_db_test;" || echo "Database may not exist"
+          docker compose exec -T postgres psql -U $TEST_DB_USER -c "DROP DATABASE IF EXISTS $TEST_DB_NAME;" || echo "Database may not exist"
         continue-on-error: true
 
       - name: Stop services

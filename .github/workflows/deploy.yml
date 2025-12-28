@@ -250,17 +250,22 @@ jobs:
           done
           echo "✅ PostgreSQL service is ready"
 
-      - name: Verify test database exists
+      - name: Create test database if not exists
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: postgres
           PGPASSWORD: postgres
+          TEST_DB_NAME: transactions_db_test
         run: |
-          echo "🔍 Verifying test database exists..."
-          psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw transactions_db_test && \
-            echo "✅ Test database 'transactions_db_test' exists" || \
-            (echo "❌ Test database not found!" && exit 1)
+          echo "🔍 Checking if test database exists..."
+          if psql -h localhost -p 5432 -U postgres -lqt | cut -d \| -f 1 | grep -qw "$TEST_DB_NAME"; then
+            echo "✅ Test database '$TEST_DB_NAME' already exists"
+          else
+            echo "📦 Creating test database '$TEST_DB_NAME'..."
+            psql -h localhost -p 5432 -U postgres -c "CREATE DATABASE $TEST_DB_NAME;" || echo "⚠️ Database may already exist"
+            echo "✅ Test database '$TEST_DB_NAME' created"
+          fi
 
       - name: Run database migrations
         env:

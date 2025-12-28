@@ -8,7 +8,6 @@ import { CreateTransactionDto } from '@dto/create-transaction.dto';
 import { QueryTransactionsDto } from '@dto/query-transactions.dto';
 import { Transaction, TransactionStatus } from '@entities/transaction.entity';
 import { logger } from '@config/logger.config';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class TransactionsService {

@@ -55,7 +55,7 @@ export function IsCurrencyCode(validationOptions?: ValidationOptions) {
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: any, args: ValidationArguments) {
+        validate(value: unknown) {
           if (typeof value !== 'string') {
             return false;
           }
@@ -77,7 +77,7 @@ export function IsAmountPrecision(validationOptions?: ValidationOptions) {
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: any, args: ValidationArguments) {
+        validate(value: unknown) {
           if (typeof value !== 'number') {
             return false;
           }

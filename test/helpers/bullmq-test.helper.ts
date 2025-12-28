@@ -42,7 +42,7 @@ export async function waitForJobsToComplete<T = any>(
         for (const job of delayed) {
           try {
             await job.remove();
-          } catch (error) {
+          } catch {
             // Ignore errors when removing delayed jobs
           }
         }
@@ -65,7 +65,7 @@ export async function waitForJobsToComplete<T = any>(
     for (const job of delayed) {
       try {
         await job.remove();
-      } catch (error) {
+      } catch {
         // Ignore errors
       }
     }
@@ -177,7 +177,7 @@ export async function processAllWaitingJobs<T>(
         if (error?.response?.error === 'Transaction already exists') {
           try {
             await job.remove();
-          } catch (removeError) {
+          } catch {
             // Ignore errors when removing
           }
         }

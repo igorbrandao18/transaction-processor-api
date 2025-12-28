@@ -3,10 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '@app.module';
 import { dbPool } from '@config/database.config';
-import {
-  TransactionType,
-  TransactionStatus,
-} from '@entities/transaction.entity';
+import { TransactionType } from '@entities/transaction.entity';
 import { getQueueToken } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { TRANSACTION_QUEUE_NAME } from '@config/bullmq.config';

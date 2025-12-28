@@ -16,7 +16,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
-  ApiQuery,
   ApiCreatedResponse,
   ApiConflictResponse,
   ApiNotFoundResponse,
@@ -28,10 +27,7 @@ import { TransactionsQueue } from '@queues/transactions.queue';
 import { CreateTransactionDto } from '@dto/create-transaction.dto';
 import { QueryTransactionsDto } from '@dto/query-transactions.dto';
 import { Transaction } from '@entities/transaction.entity';
-import {
-  PaginatedTransactionsResponseDto,
-  PaginationMetaDto,
-} from '@dto/pagination-response.dto';
+import { PaginatedTransactionsResponseDto } from '@dto/pagination-response.dto';
 import {
   BadRequestErrorDto,
   ConflictErrorDto,

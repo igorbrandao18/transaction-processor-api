@@ -4,7 +4,6 @@ import {
   TransactionType,
   TransactionStatus,
 } from '@entities/transaction.entity';
-import { logger } from '@config/logger.config';
 
 jest.mock('@config/database.config');
 jest.mock('@config/logger.config');

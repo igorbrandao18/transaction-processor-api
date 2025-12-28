@@ -22,8 +22,8 @@ services:
 
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: transaction-api
     environment:
       NODE_ENV: development

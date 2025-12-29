@@ -43,7 +43,7 @@ export class TransactionsRepository {
       );
 
       if (result.rows.length === 0) {
-        return undefined;
+        return null;
       }
 
       return this.mapRowToTransaction(result.rows[0]);
@@ -54,7 +54,7 @@ export class TransactionsRepository {
 
   async findByTransactionId(
     transactionId: string,
-  ): Promise<Transaction | undefined> {
+  ): Promise<Transaction | null> {
     const client = await dbPool.connect();
     try {
       const result = await client.query<TransactionRow>(
@@ -63,7 +63,7 @@ export class TransactionsRepository {
       );
 
       if (result.rows.length === 0) {
-        return undefined;
+        return null;
       }
 
       return this.mapRowToTransaction(result.rows[0]);

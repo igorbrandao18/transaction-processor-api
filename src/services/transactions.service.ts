@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TransactionsRepository } from '@repositories/transactions.repository';
-import type { Transaction } from '@entities/transaction.entity';
+import { Transaction } from '@entities/transaction.entity';
 import type { CreateTransactionDto } from '@dto/create-transaction.dto';
 import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
 import { TransactionStatus } from '@entities/transaction.entity';

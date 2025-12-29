@@ -244,8 +244,8 @@ export default function () {
       const metadataResponse = http.get(
         `${BASE_URL}${API_PREFIX}/transactions/metadata`,
       );
-      const metadataDuration = Date.now() - metadataStart;
-      metadataDuration.add(metadataDuration);
+      const metadataDurationMs = Date.now() - metadataStart;
+      metadataDuration.add(metadataDurationMs);
 
       const metadataSuccess = check(metadataResponse, {
         'metadata status is 200': (r) => r.status === 200,
@@ -273,7 +273,7 @@ export default function () {
             return false;
           }
         },
-        'metadata response time < 200ms': () => metadataDuration < 200,
+        'metadata response time < 200ms': () => metadataDurationMs < 200,
       });
 
       metadataRetrieved.add(metadataSuccess);

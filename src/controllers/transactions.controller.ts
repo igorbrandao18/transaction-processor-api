@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { TransactionsService } from '@services/transactions.service';
+import { TransactionsQueue } from '@queues/transactions.queue';
 import { CreateTransactionDto } from '@dto/create-transaction.dto';
 import { QueryTransactionsDto } from '@dto/query-transactions.dto';
 import { PaginatedTransactionsResponseDto } from '@dto/pagination-response.dto';
@@ -18,32 +19,56 @@ import { Transaction } from '@entities/transaction.entity';
 @ApiTags('transactions')
 @Controller('transactions')
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) {}
+  constructor(
+    private readonly transactionsService: TransactionsService,
+    private readonly transactionsQueue: TransactionsQueue,
+  ) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
     summary: 'Create a new transaction',
     description:
-      'Creates a new financial transaction. If a transaction with the same transactionId already exists, returns the existing transaction (idempotency).',
+      'Queues a new financial transaction for processing. Returns immediately with job information. The transaction will be processed asynchronously. If a transaction with the same transactionId already exists, the existing transaction is returned (idempotency).',
   })
   @ApiResponse({
-    status: 201,
-    description: 'Transaction created successfully',
-    type: Transaction,
+    status: 202,
+    description: 'Transaction queued for processing',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Transaction queued for processing',
+        },
+        jobId: {
+          type: 'string',
+          example: 'txn-2024-01-15-abc123',
+        },
+        transactionId: {
+          type: 'string',
+          example: 'txn-2024-01-15-abc123',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
     description: 'Invalid input data',
   })
-  @ApiResponse({
-    status: 409,
-    description: 'Transaction with this ID already exists',
-  })
-  async create(
-    @Body() createTransactionDto: CreateTransactionDto,
-  ): Promise<Transaction> {
-    return await this.transactionsService.create(createTransactionDto);
+  async create(@Body() createTransactionDto: CreateTransactionDto): Promise<{
+    message: string;
+    jobId: string;
+    transactionId: string;
+  }> {
+    const { jobId, transactionId } =
+      await this.transactionsQueue.addTransactionJob(createTransactionDto);
+
+    return {
+      message: 'Transaction queued for processing',
+      jobId,
+      transactionId,
+    };
   }
 
   @Get()
@@ -123,5 +148,74 @@ export class TransactionsController {
   })
   async findOne(@Param('id') id: string): Promise<Transaction> {
     return await this.transactionsService.findById(id);
+  }
+
+  @Get('queue/:transactionId/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get transaction queue status',
+    description:
+      'Retrieves the status of a transaction job in the queue by transactionId.',
+  })
+  @ApiParam({
+    name: 'transactionId',
+    description: 'Transaction ID used as job ID',
+    example: 'txn-2024-01-15-abc123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Job status retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        transactionId: { type: 'string' },
+        state: {
+          type: 'string',
+          enum: ['waiting', 'active', 'completed', 'failed'],
+        },
+        progress: { type: 'number' },
+        data: { type: 'object' },
+        result: { type: 'object' },
+        failedReason: { type: 'string', nullable: true },
+        processedOn: { type: 'number', nullable: true },
+        finishedOn: { type: 'number', nullable: true },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Job not found',
+  })
+  async getQueueStatus(@Param('transactionId') transactionId: string) {
+    const status = await this.transactionsQueue.getJobStatus(transactionId);
+    if (!status) {
+      throw new Error(`Job with transactionId "${transactionId}" not found`);
+    }
+    return status;
+  }
+
+  @Get('queue/stats')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get queue statistics',
+    description: 'Retrieves statistics about the transactions queue.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Queue statistics retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        waiting: { type: 'number' },
+        active: { type: 'number' },
+        completed: { type: 'number' },
+        failed: { type: 'number' },
+        total: { type: 'number' },
+      },
+    },
+  })
+  async getQueueStats() {
+    return await this.transactionsQueue.getQueueStats();
   }
 }

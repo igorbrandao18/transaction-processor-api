@@ -121,9 +121,8 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=https://challenge.brandaodeveloper.com.br/grafana
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-      - GF_ALERTING_ENABLED=true
-      - GF_ALERTING_EXECUTE_ALERTS=true
+      - GF_PLUGINS_PREINSTALL_SYNC=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_UNIFIED_ALERTING_ENABLED=true
       - GF_PATHS_CONFIG=/etc/grafana/grafana.ini
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
     volumes:

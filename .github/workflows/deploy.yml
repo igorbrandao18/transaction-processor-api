@@ -680,23 +680,15 @@ jobs:
             cd /tmp/transaction-processor-api/docker
             
             echo "🛑 Stopping existing API containers only..."
-            echo "⚠️  IMPORTANT: This will only affect API containers (transaction-api, transaction-db, transaction-redis, transaction-pgadmin)"
+            echo "⚠️  IMPORTANT: This will only affect API containers defined in docker-compose.yml"
+            echo "⚠️  Containers: transaction-api, transaction-db, transaction-redis, transaction-pgadmin"
             echo "⚠️  Frontend and other containers will remain untouched"
             
             # Stop only containers defined in this docker-compose.yml (API containers)
+            # docker compose down only affects containers in the current docker-compose.yml file
             docker compose down -v || true
             
-            echo "🧹 Cleaning up stopped API containers only..."
-            # Remove only containers that match API container names
-            API_CONTAINERS="transaction-api transaction-db transaction-redis transaction-pgadmin"
-            for container in $API_CONTAINERS; do
-              if docker ps -a --format "{{.Names}}" | grep -q "^${container}$"; then
-                echo "  Removing stopped container: $container"
-                docker rm -f "$container" 2>/dev/null || true
-              fi
-            done
-            
-            echo "✅ Cleanup completed - only API containers affected"
+            echo "✅ Cleanup completed - only API containers from docker-compose.yml were affected"
             
             echo "🔨 Building containers with cache optimization..."
             export DOCKER_BUILDKIT=1

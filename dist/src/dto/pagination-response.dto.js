@@ -11,7 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaginatedTransactionsResponseDto = exports.PaginationMetaDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
-const transaction_entity_1 = require("@entities/transaction.entity");
+const transaction_entity_1 = require("../entities/transaction.entity");
 class PaginationMetaDto {
     page;
     limit;

@@ -11,9 +11,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthController = void 0;
 const common_1 = require("@nestjs/common");
-const database_config_1 = require("../config/database.config");
+const prisma_service_1 = require("../config/prisma.service");
 const logger_config_1 = require("../config/logger.config");
 let HealthController = class HealthController {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
     async check() {
         const health = {
             status: 'UP',
@@ -25,9 +29,7 @@ let HealthController = class HealthController {
             },
         };
         try {
-            const client = await database_config_1.dbPool.connect();
-            await client.query('SELECT 1');
-            client.release();
+            await this.prisma.$queryRaw `SELECT 1`;
             health.checks.database = 'UP';
             logger_config_1.logger.info('Health check passed', { health });
             return health;
@@ -52,6 +54,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], HealthController.prototype, "check", null);
 exports.HealthController = HealthController = __decorate([
-    (0, common_1.Controller)('health')
+    (0, common_1.Controller)('health'),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], HealthController);
 //# sourceMappingURL=health.controller.js.map

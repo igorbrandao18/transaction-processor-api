@@ -17,6 +17,8 @@
     "paths": {
       "@/*": ["src/*"],
       "@app.module": ["src/app.module"],
+      "@app.controller": ["src/app.controller"],
+      "@app.service": ["src/app.service"],
       "@config/*": ["src/config/*"],
       "@entities/*": ["src/entities/*"],
       "@controllers/*": ["src/controllers/*"],

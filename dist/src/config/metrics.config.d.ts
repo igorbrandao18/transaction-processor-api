@@ -1,0 +1,11 @@
+import { Registry, Counter, Histogram, Gauge } from 'prom-client';
+export declare const register: Registry<"text/plain; version=0.0.4; charset=utf-8">;
+export declare const httpRequestDuration: Histogram<"status" | "method" | "route">;
+export declare const httpRequestTotal: Counter<"status" | "method" | "route">;
+export declare const httpRequestErrors: Counter<"status" | "method" | "route">;
+export declare const transactionsCreated: Counter<"type" | "currency" | "status">;
+export declare const transactionsProcessed: Counter<"status">;
+export declare const transactionsQueueSize: Gauge<"state">;
+export declare const databaseConnections: Gauge<"state">;
+export declare const databaseQueryDuration: Histogram<"operation">;
+export declare const redisConnections: Gauge<string>;

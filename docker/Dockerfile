@@ -30,12 +30,13 @@ RUN if [ -f app.tar.gz ]; then \
     fi
 
 # Copy source files if not using tar.gz (development mode)
-COPY tsconfig.json nest-cli.json ./
+COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src ./src
-COPY migrations ./migrations
+COPY prisma ./prisma
+COPY prisma.config.ts ./
 
-# Build TypeScript
-RUN npm run build && echo "Build completed, checking dist..." && ls -la dist/ && test -f dist/src/main.js || (echo "ERROR: dist/src/main.js not found!" && find . -name "main.js" 2>/dev/null && exit 1)
+# Generate Prisma Client and build TypeScript
+RUN npx prisma generate && npm run build && echo "Build completed, checking dist..." && ls -la dist/ && test -f dist/src/main.js || (echo "ERROR: dist/src/main.js not found!" && find . -name "main.js" 2>/dev/null && exit 1)
 
 # Stage 3: Production
 FROM node:18-alpine AS production
@@ -51,7 +52,10 @@ COPY --from=dependencies --chown=nestjs:nodejs /app/node_modules ./node_modules
 # Copy built application from build stage
 COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=build --chown=nestjs:nodejs /app/package*.json ./
-COPY --from=build --chown=nestjs:nodejs /app/migrations ./migrations
+COPY --from=build --chown=nestjs:nodejs /app/prisma ./prisma
+COPY --from=build --chown=nestjs:nodejs /app/prisma.config.ts ./
+COPY --from=build --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build --chown=nestjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 # Switch to non-root user
 USER nestjs

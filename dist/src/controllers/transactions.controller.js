@@ -11,23 +11,30 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionsController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
-const transactions_service_1 = require("@services/transactions.service");
-const create_transaction_dto_1 = require("@dto/create-transaction.dto");
-const query_transactions_dto_1 = require("@dto/query-transactions.dto");
-const pagination_response_dto_1 = require("@dto/pagination-response.dto");
-const transaction_entity_1 = require("@entities/transaction.entity");
+const transactions_service_1 = require("../services/transactions.service");
+const transactions_queue_1 = require("../queues/transactions.queue");
+const create_transaction_dto_1 = require("../dto/create-transaction.dto");
+const query_transactions_dto_1 = require("../dto/query-transactions.dto");
+const pagination_response_dto_1 = require("../dto/pagination-response.dto");
+const transaction_entity_1 = require("../entities/transaction.entity");
 let TransactionsController = class TransactionsController {
     transactionsService;
-    constructor(transactionsService) {
+    transactionsQueue;
+    constructor(transactionsService, transactionsQueue) {
         this.transactionsService = transactionsService;
+        this.transactionsQueue = transactionsQueue;
     }
     async create(createTransactionDto) {
-        return await this.transactionsService.create(createTransactionDto);
+        const { jobId, transactionId } = await this.transactionsQueue.addTransactionJob(createTransactionDto);
+        return {
+            message: 'Transaction queued for processing',
+            jobId,
+            transactionId,
+        };
     }
     async findAll(query) {
         return await this.transactionsService.findAll(query);
@@ -38,31 +45,53 @@ let TransactionsController = class TransactionsController {
     async findOne(id) {
         return await this.transactionsService.findById(id);
     }
+    async getQueueStatus(transactionId) {
+        const status = await this.transactionsQueue.getJobStatus(transactionId);
+        if (!status) {
+            throw new Error(`Job with transactionId "${transactionId}" not found`);
+        }
+        return status;
+    }
+    async getQueueStats() {
+        return await this.transactionsQueue.getQueueStats();
+    }
 };
 exports.TransactionsController = TransactionsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, common_1.HttpCode)(common_1.HttpStatus.ACCEPTED),
     (0, swagger_1.ApiOperation)({
         summary: 'Create a new transaction',
-        description: 'Creates a new financial transaction. If a transaction with the same transactionId already exists, returns the existing transaction (idempotency).',
+        description: 'Queues a new financial transaction for processing. Returns immediately with job information. The transaction will be processed asynchronously. If a transaction with the same transactionId already exists, the existing transaction is returned (idempotency).',
     }),
     (0, swagger_1.ApiResponse)({
-        status: 201,
-        description: 'Transaction created successfully',
-        type: transaction_entity_1.Transaction,
+        status: 202,
+        description: 'Transaction queued for processing',
+        schema: {
+            type: 'object',
+            properties: {
+                message: {
+                    type: 'string',
+                    example: 'Transaction queued for processing',
+                },
+                jobId: {
+                    type: 'string',
+                    example: 'txn-2024-01-15-abc123',
+                },
+                transactionId: {
+                    type: 'string',
+                    example: 'txn-2024-01-15-abc123',
+                },
+            },
+        },
     }),
     (0, swagger_1.ApiResponse)({
         status: 400,
         description: 'Invalid input data',
     }),
-    (0, swagger_1.ApiResponse)({
-        status: 409,
-        description: 'Transaction with this ID already exists',
-    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_b = typeof create_transaction_dto_1.CreateTransactionDto !== "undefined" && create_transaction_dto_1.CreateTransactionDto) === "function" ? _b : Object]),
+    __metadata("design:paramtypes", [create_transaction_dto_1.CreateTransactionDto]),
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "create", null);
 __decorate([
@@ -78,7 +107,7 @@ __decorate([
     }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_c = typeof query_transactions_dto_1.QueryTransactionsDto !== "undefined" && query_transactions_dto_1.QueryTransactionsDto) === "function" ? _c : Object]),
+    __metadata("design:paramtypes", [query_transactions_dto_1.QueryTransactionsDto]),
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "findAll", null);
 __decorate([
@@ -140,9 +169,77 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Get)('queue/:transactionId/status'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get transaction queue status',
+        description: 'Retrieves the status of a transaction job in the queue by transactionId.',
+    }),
+    (0, swagger_1.ApiParam)({
+        name: 'transactionId',
+        description: 'Transaction ID used as job ID',
+        example: 'txn-2024-01-15-abc123',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Job status retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                id: { type: 'string' },
+                transactionId: { type: 'string' },
+                state: {
+                    type: 'string',
+                    enum: ['waiting', 'active', 'completed', 'failed'],
+                },
+                progress: { type: 'number' },
+                data: { type: 'object' },
+                result: { type: 'object' },
+                failedReason: { type: 'string', nullable: true },
+                processedOn: { type: 'number', nullable: true },
+                finishedOn: { type: 'number', nullable: true },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 404,
+        description: 'Job not found',
+    }),
+    __param(0, (0, common_1.Param)('transactionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], TransactionsController.prototype, "getQueueStatus", null);
+__decorate([
+    (0, common_1.Get)('queue/stats'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Get queue statistics',
+        description: 'Retrieves statistics about the transactions queue.',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Queue statistics retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                waiting: { type: 'number' },
+                active: { type: 'number' },
+                completed: { type: 'number' },
+                failed: { type: 'number' },
+                total: { type: 'number' },
+            },
+        },
+    }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], TransactionsController.prototype, "getQueueStats", null);
 exports.TransactionsController = TransactionsController = __decorate([
     (0, swagger_1.ApiTags)('transactions'),
     (0, common_1.Controller)('transactions'),
-    __metadata("design:paramtypes", [typeof (_a = typeof transactions_service_1.TransactionsService !== "undefined" && transactions_service_1.TransactionsService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [transactions_service_1.TransactionsService,
+        transactions_queue_1.TransactionsQueue])
 ], TransactionsController);
 //# sourceMappingURL=transactions.controller.js.map

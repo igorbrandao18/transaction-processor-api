@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
@@ -92,16 +92,10 @@
 <a name='L27'></a><a href='#L27'>27</a>
 <a name='L28'></a><a href='#L28'>28</a>
 <a name='L29'></a><a href='#L29'>29</a>
-<a name='L30'></a><a href='#L30'>30</a>
-<a name='L31'></a><a href='#L31'>31</a>
-<a name='L32'></a><a href='#L32'>32</a>
-<a name='L33'></a><a href='#L33'>33</a>
-<a name='L34'></a><a href='#L34'>34</a>
-<a name='L35'></a><a href='#L35'>35</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L30'></a><a href='#L30'>30</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -110,45 +104,44 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { INestApplication } from '@nestjs/common';
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { INestApplication, ValidationPipe } from '@nestjs/common';</span>
 <span class="cstat-no" title="statement not covered" >import { SwaggerModule } from '@nestjs/swagger';</span>
-<span class="cstat-no" title="statement not covered" >import { HttpExceptionFilter } from '@filters/http-exception.filter';</span>
-<span class="cstat-no" title="statement not covered" >import { validationPipeConfig } from '@config/validation.config';</span>
 <span class="cstat-no" title="statement not covered" >import {</span>
   swaggerConfig,
   swaggerDocumentOptions,
   swaggerSetupOptions,
 } from '@config/swagger.config';
-<span class="cstat-no" title="statement not covered" >import { testConnection } from '@config/database.config';</span>
-<span class="cstat-no" title="statement not covered" >import { logger } from '@config/logger.config';</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export a</span>sync function <span class="fstat-no" title="function not covered" >configureApp(</span>app: INestApplication): Promise&lt;void&gt; {
-<span class="cstat-no" title="statement not covered" >  app.useGlobalPipes(validationPipeConfig);</span>
+<span class="cstat-no" title="statement not covered" >export function <span class="fstat-no" title="function not covered" >c</span>onfigureApp(</span>app: INestApplication): void {
+<span class="cstat-no" title="statement not covered" >  app.setGlobalPrefix('api');</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  app.useGlobalFilters(new HttpExceptionFilter());</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >  app.enableCors();</span>
+<span class="cstat-no" title="statement not covered" >  app.useGlobalPipes(</span>
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
 &nbsp;
   const document = <span class="cstat-no" title="statement not covered" >SwaggerModule.createDocument(</span>
     app,
@@ -156,14 +149,6 @@
     swaggerDocumentOptions,
   );
 <span class="cstat-no" title="statement not covered" >  SwaggerModule.setup('api/docs', app, document, swaggerSetupOptions);</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >  try {</span>
-<span class="cstat-no" title="statement not covered" >    await testConnection();</span>
-<span class="cstat-no" title="statement not covered" >    logger.info('Database connection established');</span>
-  } catch (error) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Failed to connect to database', { error });</span>
-<span class="cstat-no" title="statement not covered" >    process.exit(1);</span>
-  }
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -172,7 +157,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-29T00:20:59.019Z
+                at 2025-12-29T14:36:07.413Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -1,3 +1,4 @@
+import { PrismaService } from '@config/prisma.service';
 import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
 type TransactionEntity = {
     id: string;
@@ -11,6 +12,8 @@ type TransactionEntity = {
     updatedAt: Date;
 };
 export declare class TransactionsRepository {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
     create(transaction: {
         transactionId: string;
         amount: number;
@@ -25,6 +28,6 @@ export declare class TransactionsRepository {
         transactions: TransactionEntity[];
         total: number;
     }>;
-    private mapRowToTransaction;
+    private mapPrismaToEntity;
 }
 export {};

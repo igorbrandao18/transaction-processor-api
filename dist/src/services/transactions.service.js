@@ -8,34 +8,45 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionsService = void 0;
 const common_1 = require("@nestjs/common");
-const transactions_repository_1 = require("@repositories/transactions.repository");
-const transaction_entity_1 = require("@entities/transaction.entity");
+const transactions_repository_1 = require("../repositories/transactions.repository");
+const transaction_entity_1 = require("../entities/transaction.entity");
+const metrics_config_1 = require("../config/metrics.config");
 let TransactionsService = class TransactionsService {
     repository;
     constructor(repository) {
         this.repository = repository;
     }
     async create(dto) {
-        const existing = await this.repository.findByTransactionId(dto.transactionId);
-        if (existing) {
-            throw new common_1.ConflictException({
-                message: 'Transaction with this ID already exists',
-                existingTransaction: existing,
+        const timer = metrics_config_1.databaseQueryDuration.startTimer({ operation: 'create' });
+        try {
+            const existing = await this.repository.findByTransactionId(dto.transactionId);
+            if (existing) {
+                throw new common_1.ConflictException({
+                    message: 'Transaction with this ID already exists',
+                    existingTransaction: existing,
+                });
+            }
+            const transaction = await this.repository.create({
+                transactionId: dto.transactionId,
+                amount: dto.amount,
+                currency: dto.currency,
+                type: dto.type,
+                status: dto.status || transaction_entity_1.TransactionStatus.PENDING,
+                metadata: dto.metadata,
             });
+            metrics_config_1.transactionsCreated.inc({
+                type: dto.type,
+                status: dto.status || transaction_entity_1.TransactionStatus.PENDING,
+                currency: dto.currency,
+            });
+            return transaction;
         }
-        const transaction = await this.repository.create({
-            transactionId: dto.transactionId,
-            amount: dto.amount,
-            currency: dto.currency,
-            type: dto.type,
-            status: dto.status || transaction_entity_1.TransactionStatus.PENDING,
-            metadata: dto.metadata,
-        });
-        return transaction;
+        finally {
+            timer();
+        }
     }
     async findById(id) {
         const transaction = await this.repository.findById(id);
@@ -69,6 +80,6 @@ let TransactionsService = class TransactionsService {
 exports.TransactionsService = TransactionsService;
 exports.TransactionsService = TransactionsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof transactions_repository_1.TransactionsRepository !== "undefined" && transactions_repository_1.TransactionsRepository) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [transactions_repository_1.TransactionsRepository])
 ], TransactionsService);
 //# sourceMappingURL=transactions.service.js.map

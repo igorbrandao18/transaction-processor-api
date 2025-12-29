@@ -1,7 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
-import { AppController } from '@controllers/app.controller';
-import { AppService } from '@services/app.service';
+import { AppController } from '@app.controller';
+import { AppService } from '@app.service';
 import { TransactionsController } from '@controllers/transactions.controller';
 import { HealthController } from '@controllers/health.controller';
 import { MetricsController } from '@controllers/metrics.controller';
@@ -11,6 +11,7 @@ import { TransactionsQueue } from '@queues/transactions.queue';
 import { TransactionProcessor } from '@processors/transaction.processor';
 import { MetricsMiddleware } from '@middleware/metrics.middleware';
 import { QueueMetricsService } from '@services/queue-metrics.service';
+import { PrismaService } from '@config/prisma.service';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { QueueMetricsService } from '@services/queue-metrics.service';
   ],
   providers: [
     AppService,
+    PrismaService,
     TransactionsService,
     TransactionsRepository,
     TransactionsQueue,

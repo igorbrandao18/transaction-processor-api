@@ -21,7 +21,7 @@ export class MetricsMiddleware implements NestMiddleware {
       const duration = (Date.now() - start) / 1000;
       const status = res.statusCode.toString();
 
-      httpRequestDuration.inc(
+      httpRequestDuration.observe(
         {
           method,
           route,

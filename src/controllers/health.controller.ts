@@ -1,9 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
-import { dbPool } from '@config/database.config';
+import { PrismaService } from '@config/prisma.service';
 import { logger } from '@config/logger.config';
 
 @Controller('health')
 export class HealthController {
+  constructor(private readonly prisma: PrismaService) {}
+
   @Get()
   async check() {
     const health = {
@@ -17,9 +19,7 @@ export class HealthController {
     };
 
     try {
-      const client = await dbPool.connect();
-      await client.query('SELECT 1');
-      client.release();
+      await this.prisma.$queryRaw`SELECT 1`;
 
       health.checks.database = 'UP';
       logger.info('Health check passed', { health });

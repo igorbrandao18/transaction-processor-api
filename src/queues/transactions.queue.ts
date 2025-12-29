@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import type { CreateTransactionDto } from '@dto/create-transaction.dto';
 
 @Injectable()

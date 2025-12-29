@@ -8,20 +8,64 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const app_controller_1 = require("./app.controller");
-const app_service_1 = require("./app.service");
+const bull_1 = require("@nestjs/bull");
+const _app_controller_1 = require("./app.controller");
+const _app_service_1 = require("./app.service");
 const transactions_controller_1 = require("./controllers/transactions.controller");
 const health_controller_1 = require("./controllers/health.controller");
+const metrics_controller_1 = require("./controllers/metrics.controller");
 const transactions_service_1 = require("./services/transactions.service");
 const transactions_repository_1 = require("./repositories/transactions.repository");
+const transactions_queue_1 = require("./queues/transactions.queue");
+const transaction_processor_1 = require("./processors/transaction.processor");
+const metrics_middleware_1 = require("./middleware/metrics.middleware");
+const queue_metrics_service_1 = require("./services/queue-metrics.service");
+const prisma_service_1 = require("./config/prisma.service");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(metrics_middleware_1.MetricsMiddleware).forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [],
-        controllers: [app_controller_1.AppController, transactions_controller_1.TransactionsController, health_controller_1.HealthController],
-        providers: [app_service_1.AppService, transactions_service_1.TransactionsService, transactions_repository_1.TransactionsRepository],
+        imports: [
+            bull_1.BullModule.forRoot({
+                redis: {
+                    host: process.env.REDIS_HOST || 'localhost',
+                    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+                    password: process.env.REDIS_PASSWORD || undefined,
+                },
+            }),
+            bull_1.BullModule.registerQueue({
+                name: 'transactions',
+                defaultJobOptions: {
+                    attempts: parseInt(process.env.BULLMQ_DEFAULT_ATTEMPTS || '3', 10),
+                    backoff: {
+                        type: 'exponential',
+                        delay: parseInt(process.env.BULLMQ_BACKOFF_DELAY || '2000', 10),
+                    },
+                    removeOnComplete: parseInt(process.env.BULLMQ_REMOVE_ON_COMPLETE || '100', 10),
+                    removeOnFail: parseInt(process.env.BULLMQ_REMOVE_ON_FAIL || '1000', 10),
+                },
+            }),
+        ],
+        controllers: [
+            _app_controller_1.AppController,
+            transactions_controller_1.TransactionsController,
+            health_controller_1.HealthController,
+            metrics_controller_1.MetricsController,
+        ],
+        providers: [
+            _app_service_1.AppService,
+            prisma_service_1.PrismaService,
+            transactions_service_1.TransactionsService,
+            transactions_repository_1.TransactionsRepository,
+            transactions_queue_1.TransactionsQueue,
+            transaction_processor_1.TransactionProcessor,
+            metrics_middleware_1.MetricsMiddleware,
+            queue_metrics_service_1.QueueMetricsService,
+        ],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

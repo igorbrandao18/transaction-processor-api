@@ -8,13 +8,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QueryTransactionsDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
-const transaction_entity_1 = require("@entities/transaction.entity");
+const transaction_entity_1 = require("../entities/transaction.entity");
 class QueryTransactionsDto {
     page = 1;
     limit = 20;
@@ -106,7 +105,7 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(transaction_entity_1.TransactionStatus),
-    __metadata("design:type", typeof (_a = typeof transaction_entity_1.TransactionStatus !== "undefined" && transaction_entity_1.TransactionStatus) === "function" ? _a : Object)
+    __metadata("design:type", String)
 ], QueryTransactionsDto.prototype, "status", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
@@ -126,7 +125,7 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(transaction_entity_1.TransactionType),
-    __metadata("design:type", typeof (_b = typeof transaction_entity_1.TransactionType !== "undefined" && transaction_entity_1.TransactionType) === "function" ? _b : Object)
+    __metadata("design:type", String)
 ], QueryTransactionsDto.prototype, "type", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({

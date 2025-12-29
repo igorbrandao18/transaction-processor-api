@@ -4,21 +4,26 @@
   "rootDir": "../",
   "testMatch": ["<rootDir>/test/integration/**/*.spec.ts"],
   "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1",
-      "^@config/(.*)$": "<rootDir>/src/config/$1",
-      "^@entities/(.*)$": "<rootDir>/src/entities/$1",
-      "^@controllers/(.*)$": "<rootDir>/src/controllers/$1",
-      "^@services/(.*)$": "<rootDir>/src/services/$1",
-      "^@repositories/(.*)$": "<rootDir>/src/repositories/$1",
-      "^@dto/(.*)$": "<rootDir>/src/dto/$1",
-      "^@filters/(.*)$": "<rootDir>/src/filters/$1",
-      "^@middleware/(.*)$": "<rootDir>/src/middleware/$1",
-      "^@utils/(.*)$": "<rootDir>/src/utils/$1",
-      "^@queues/(.*)$": "<rootDir>/src/queues/$1",
-      "^@processors/(.*)$": "<rootDir>/src/processors/$1"
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@app\\.module$": "<rootDir>/src/app.module",
+    "^@app\\.controller$": "<rootDir>/src/app.controller",
+    "^@app\\.service$": "<rootDir>/src/app.service",
+    "^@config/(.*)$": "<rootDir>/src/config/$1",
+    "^@entities/(.*)$": "<rootDir>/src/entities/$1",
+    "^@controllers/(.*)$": "<rootDir>/src/controllers/$1",
+    "^@services/(.*)$": "<rootDir>/src/services/$1",
+    "^@repositories/(.*)$": "<rootDir>/src/repositories/$1",
+    "^@dto/(.*)$": "<rootDir>/src/dto/$1",
+    "^@filters/(.*)$": "<rootDir>/src/filters/$1",
+    "^@middleware/(.*)$": "<rootDir>/src/middleware/$1",
+    "^@utils/(.*)$": "<rootDir>/src/utils/$1",
+    "^@queues/(.*)$": "<rootDir>/src/queues/$1",
+    "^@processors/(.*)$": "<rootDir>/src/processors/$1"
   },
   "collectCoverageFrom": [
-    "src/**/*.(t|j)s"
+    "src/**/*.(t|j)s",
+    "!src/**/*.spec.ts",
+    "!src/main.ts"
   ],
   "coverageDirectory": "coverage"
 }

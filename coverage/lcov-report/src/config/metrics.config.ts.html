@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>0/21</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>0/21</span>
             </div>
         
             
@@ -144,40 +144,11 @@
 <a name='L79'></a><a href='#L79'>79</a>
 <a name='L80'></a><a href='#L80'>80</a>
 <a name='L81'></a><a href='#L81'>81</a>
-<a name='L82'></a><a href='#L82'>82</a>
-<a name='L83'></a><a href='#L83'>83</a>
-<a name='L84'></a><a href='#L84'>84</a>
-<a name='L85'></a><a href='#L85'>85</a>
-<a name='L86'></a><a href='#L86'>86</a>
-<a name='L87'></a><a href='#L87'>87</a>
-<a name='L88'></a><a href='#L88'>88</a>
-<a name='L89'></a><a href='#L89'>89</a>
-<a name='L90'></a><a href='#L90'>90</a>
-<a name='L91'></a><a href='#L91'>91</a>
-<a name='L92'></a><a href='#L92'>92</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L82'></a><a href='#L82'>82</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -217,8 +188,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -241,101 +210,102 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { Registry, Counter, Histogram, Gauge } from 'prom-client';</span>
 &nbsp;
-// Create a Registry to register metrics
 export const <span class="cstat-no" title="statement not covered" >register = new Registry();</span>
 &nbsp;
-// Add default metrics (CPU, memory, etc.)
 <span class="cstat-no" title="statement not covered" >register.setDefaultLabels({</span>
   app: 'transaction-processor-api',
 });
 &nbsp;
-// HTTP Request Metrics
 export const <span class="cstat-no" title="statement not covered" >httpRequestDuration = new Histogram({</span>
   name: 'http_request_duration_seconds',
   help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status_code'],
-  buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10],
+  labelNames: ['method', 'route', 'status'],
+  buckets: [0.1, 0.5, 1, 2, 5],
   registers: [register],
 });
 &nbsp;
 export const <span class="cstat-no" title="statement not covered" >httpRequestTotal = new Counter({</span>
   name: 'http_requests_total',
   help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status_code'],
+  labelNames: ['method', 'route', 'status'],
   registers: [register],
 });
 &nbsp;
-// Database Metrics
-export const <span class="cstat-no" title="statement not covered" >dbQueryDuration = new Histogram({</span>
-  name: 'db_query_duration_seconds',
+export const <span class="cstat-no" title="statement not covered" >httpRequestErrors = new Counter({</span>
+  name: 'http_request_errors_total',
+  help: 'Total number of HTTP request errors',
+  labelNames: ['method', 'route', 'status'],
+  registers: [register],
+});
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >transactionsCreated = new Counter({</span>
+  name: 'transactions_created_total',
+  help: 'Total number of transactions created',
+  labelNames: ['type', 'status', 'currency'],
+  registers: [register],
+});
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >transactionsProcessed = new Counter({</span>
+  name: 'transactions_processed_total',
+  help: 'Total number of transactions processed',
+  labelNames: ['status'],
+  registers: [register],
+});
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >transactionsQueueSize = new Gauge({</span>
+  name: 'transactions_queue_size',
+  help: 'Current size of transactions queue',
+  labelNames: ['state'],
+  registers: [register],
+});
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >databaseConnections = new Gauge({</span>
+  name: 'database_connections',
+  help: 'Current number of database connections',
+  labelNames: ['state'],
+  registers: [register],
+});
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >databaseQueryDuration = new Histogram({</span>
+  name: 'database_query_duration_seconds',
   help: 'Duration of database queries in seconds',
-  labelNames: ['operation', 'table'],
-  buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5],
+  labelNames: ['operation'],
+  buckets: [0.01, 0.05, 0.1, 0.5, 1, 2],
   registers: [register],
 });
 &nbsp;
-export const <span class="cstat-no" title="statement not covered" >dbConnectionsActive = new Gauge({</span>
-  name: 'db_connections_active',
-  help: 'Number of active database connections',
+export const <span class="cstat-no" title="statement not covered" >redisConnections = new Gauge({</span>
+  name: 'redis_connections',
+  help: 'Current number of Redis connections',
   registers: [register],
 });
 &nbsp;
-// Queue Metrics
-export const <span class="cstat-no" title="statement not covered" >queueJobsTotal = new Counter({</span>
-  name: 'queue_jobs_total',
-  help: 'Total number of queue jobs',
-  labelNames: ['queue', 'status'],
-  registers: [register],
-});
-&nbsp;
-export const <span class="cstat-no" title="statement not covered" >queueJobsActive = new Gauge({</span>
-  name: 'queue_jobs_active',
-  help: 'Number of active queue jobs',
-  labelNames: ['queue'],
-  registers: [register],
-});
-&nbsp;
-export const <span class="cstat-no" title="statement not covered" >queueJobDuration = new Histogram({</span>
-  name: 'queue_job_duration_seconds',
-  help: 'Duration of queue job processing in seconds',
-  labelNames: ['queue', 'status'],
-  buckets: [0.1, 0.5, 1, 2, 5, 10, 30],
-  registers: [register],
-});
-&nbsp;
-// Application Metrics
-export const <span class="cstat-no" title="statement not covered" >appInfo = new Gauge({</span>
-  name: 'app_info',
-  help: 'Application information',
-  labelNames: ['version', 'environment'],
-  registers: [register],
-});
-&nbsp;
-export const <span class="cstat-no" title="statement not covered" >appUptime = new Gauge({</span>
-  name: 'app_uptime_seconds',
-  help: 'Application uptime in seconds',
-  registers: [register],
-});
-&nbsp;
-// Initialize app info
-<span class="cstat-no" title="statement not covered" >appInfo.set(</span>
-  {
-    version: process.env.npm_package_version || '0.0.1',
-    environment: process.env.NODE_ENV || 'development',
-  },
-  1,
-);
-&nbsp;
-// Update uptime every 10 seconds
-<span class="cstat-no" title="statement not covered" >setInterval(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  appUptime.set(process.uptime());</span>
-}, 10000);
+<span class="cstat-no" title="statement not covered" >register.registerMetric(httpRequestDuration);</span>
+<span class="cstat-no" title="statement not covered" >register.registerMetric(httpRequestTotal);</span>
+<span class="cstat-no" title="statement not covered" >register.registerMetric(httpRequestErrors);</span>
+<span class="cstat-no" title="statement not covered" >register.registerMetric(transactionsCreated);</span>
+<span class="cstat-no" title="statement not covered" >register.registerMetric(transactionsProcessed);</span>
+<span class="cstat-no" title="statement not covered" >register.registerMetric(transactionsQueueSize);</span>
+<span class="cstat-no" title="statement not covered" >register.registerMetric(databaseConnections);</span>
+<span class="cstat-no" title="statement not covered" >register.registerMetric(databaseQueryDuration);</span>
+<span class="cstat-no" title="statement not covered" >register.registerMetric(redisConnections);</span>
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -343,7 +313,7 @@ export const <span class="cstat-no" title="statement not covered" >appUptime = n
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-29T00:20:59.019Z
+                at 2025-12-29T14:36:07.413Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

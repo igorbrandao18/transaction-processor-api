@@ -37,4 +37,3 @@ describe('Health Integration', () => {
     expect(response.body.checks.database).toBe('UP');
   });
 });
-

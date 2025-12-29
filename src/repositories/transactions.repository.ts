@@ -113,6 +113,20 @@ export class TransactionsRepository {
     };
   }
 
+  async updateStatus(
+    id: string,
+    status: string,
+  ): Promise<TransactionEntity | null> {
+    const updated = await this.prisma.transaction.update({
+      where: { id },
+      data: {
+        status: status as TransactionStatus,
+      },
+    });
+
+    return this.mapPrismaToEntity(updated);
+  }
+
   private mapPrismaToEntity(transaction: {
     id: string;
     transactionId: string;
@@ -120,7 +134,7 @@ export class TransactionsRepository {
     currency: string;
     type: TransactionType;
     status: TransactionStatus;
-    metadata: Record<string, any> | null;
+    metadata: Prisma.JsonValue | null;
     createdAt: Date;
     updatedAt: Date;
   }): TransactionEntity {

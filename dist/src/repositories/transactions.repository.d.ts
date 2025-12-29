@@ -28,6 +28,7 @@ export declare class TransactionsRepository {
         transactions: TransactionEntity[];
         total: number;
     }>;
+    updateStatus(id: string, status: string): Promise<TransactionEntity | null>;
     private mapPrismaToEntity;
 }
 export {};

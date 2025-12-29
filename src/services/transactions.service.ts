@@ -85,6 +85,25 @@ export class TransactionsService {
     };
   }
 
+  async updateStatus(
+    id: string,
+    status: TransactionStatus,
+  ): Promise<Transaction> {
+    const transaction = await this.repository.updateStatus(id, status);
+    if (!transaction) {
+      throw new NotFoundException(`Transaction with ID ${id} not found`);
+    }
+    return transaction as Transaction;
+  }
+
+  async findByTransactionId(
+    transactionId: string,
+  ): Promise<Transaction | null> {
+    const transaction =
+      await this.repository.findByTransactionId(transactionId);
+    return transaction as Transaction | null;
+  }
+
   getMetadata(): {
     types: string[];
     statuses: string[];

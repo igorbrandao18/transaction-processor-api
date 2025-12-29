@@ -14,6 +14,7 @@ exports.TransactionProcessor = void 0;
 const bull_1 = require("@nestjs/bull");
 const common_1 = require("@nestjs/common");
 const transactions_service_1 = require("../services/transactions.service");
+const transaction_entity_1 = require("../entities/transaction.entity");
 const metrics_config_1 = require("../config/metrics.config");
 let TransactionProcessor = TransactionProcessor_1 = class TransactionProcessor {
     transactionsService;
@@ -28,16 +29,33 @@ let TransactionProcessor = TransactionProcessor_1 = class TransactionProcessor {
         });
         try {
             const transaction = await this.transactionsService.create(job.data);
+            const completedTransaction = await this.transactionsService.updateStatus(transaction.id, transaction_entity_1.TransactionStatus.COMPLETED);
             metrics_config_1.transactionsProcessed.inc({ status: 'success' });
             this.logger.log(`Transaction processed successfully: ${job.id}`, {
-                transactionId: transaction.transactionId,
-                transactionUuid: transaction.id,
+                transactionId: completedTransaction.transactionId,
+                transactionUuid: completedTransaction.id,
                 jobId: job.id,
+                status: completedTransaction.status,
             });
-            return transaction;
+            return completedTransaction;
         }
         catch (error) {
             metrics_config_1.transactionsProcessed.inc({ status: 'error' });
+            try {
+                const existingTransaction = await this.transactionsService.findByTransactionId(job.data.transactionId);
+                if (existingTransaction &&
+                    existingTransaction.status === transaction_entity_1.TransactionStatus.PENDING) {
+                    await this.transactionsService.updateStatus(existingTransaction.id, transaction_entity_1.TransactionStatus.FAILED);
+                }
+            }
+            catch (updateError) {
+                this.logger.warn(`Could not update transaction status to failed: ${job.id}`, {
+                    transactionId: job.data.transactionId,
+                    error: updateError instanceof Error
+                        ? updateError.message
+                        : 'Unknown error',
+                });
+            }
             this.logger.error(`Failed to process transaction: ${job.id}`, {
                 transactionId: job.data.transactionId,
                 jobId: job.id,

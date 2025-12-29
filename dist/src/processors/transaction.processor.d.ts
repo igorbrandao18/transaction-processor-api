@@ -5,5 +5,5 @@ export declare class TransactionProcessor {
     private readonly transactionsService;
     private readonly logger;
     constructor(transactionsService: TransactionsService);
-    handleTransaction(job: Job<CreateTransactionDto>): Promise<import("../entities/transaction.entity").Transaction>;
+    handleTransaction(job: Job<CreateTransactionDto>): Promise<import("@entities/transaction.entity").Transaction>;
 }

@@ -2,6 +2,7 @@ import { TransactionsRepository } from '@repositories/transactions.repository';
 import { Transaction } from '@entities/transaction.entity';
 import type { CreateTransactionDto } from '@dto/create-transaction.dto';
 import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
+import { TransactionStatus } from '@entities/transaction.entity';
 export declare class TransactionsService {
     private readonly repository;
     constructor(repository: TransactionsRepository);
@@ -16,6 +17,8 @@ export declare class TransactionsService {
             totalPages: number;
         };
     }>;
+    updateStatus(id: string, status: TransactionStatus): Promise<Transaction>;
+    findByTransactionId(transactionId: string): Promise<Transaction | null>;
     getMetadata(): {
         types: string[];
         statuses: string[];

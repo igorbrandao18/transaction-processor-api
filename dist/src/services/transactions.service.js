@@ -69,6 +69,17 @@ let TransactionsService = class TransactionsService {
             },
         };
     }
+    async updateStatus(id, status) {
+        const transaction = await this.repository.updateStatus(id, status);
+        if (!transaction) {
+            throw new common_1.NotFoundException(`Transaction with ID ${id} not found`);
+        }
+        return transaction;
+    }
+    async findByTransactionId(transactionId) {
+        const transaction = await this.repository.findByTransactionId(transactionId);
+        return transaction;
+    }
     getMetadata() {
         return {
             types: ['credit', 'debit'],

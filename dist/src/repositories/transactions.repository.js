@@ -85,6 +85,15 @@ let TransactionsRepository = class TransactionsRepository {
             total,
         };
     }
+    async updateStatus(id, status) {
+        const updated = await this.prisma.transaction.update({
+            where: { id },
+            data: {
+                status: status,
+            },
+        });
+        return this.mapPrismaToEntity(updated);
+    }
     mapPrismaToEntity(transaction) {
         return {
             id: transaction.id,

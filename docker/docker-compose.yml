@@ -20,6 +20,21 @@ services:
     networks:
       - transaction-network
 
+  migrate:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: transaction-migrate
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/transactions_db?schema=public
+    command: npx prisma migrate deploy
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - transaction-network
+    restart: "no"
+
   app:
     build:
       context: ..
@@ -50,6 +65,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     networks:
       - transaction-network
     healthcheck:

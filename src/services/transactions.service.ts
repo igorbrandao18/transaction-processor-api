@@ -14,7 +14,6 @@ export class TransactionsService {
   constructor(private readonly repository: TransactionsRepository) {}
 
   async create(dto: CreateTransactionDto): Promise<Transaction> {
-    // Check for idempotency - if transaction with same transactionId exists, return it
     const existing = await this.repository.findByTransactionId(
       dto.transactionId,
     );

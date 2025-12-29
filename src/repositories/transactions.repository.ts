@@ -1,18 +1,7 @@
 import { dbPool } from '@config/database.config';
 import type { TransactionRow } from '@entities/transaction.entity';
+import type { Transaction } from '@entities/transaction.entity';
 import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
-
-type Transaction = {
-  id: string;
-  transactionId: string;
-  amount: number;
-  currency: string;
-  type: string;
-  status: string;
-  metadata?: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 type TransactionOrUndefined = Transaction | undefined;
 
@@ -126,14 +115,12 @@ export class TransactionsRepository {
       const whereClause =
         conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-      // Get total count
       const countResult = await client.query<{ count: string }>(
         `SELECT COUNT(*) as count FROM transactions ${whereClause}`,
         params,
       );
       const total = parseInt(countResult.rows[0].count, 10);
 
-      // Get paginated results
       params.push(limit, offset);
       const result = await client.query<TransactionRow>(
         `SELECT * FROM transactions ${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,

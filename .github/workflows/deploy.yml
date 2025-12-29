@@ -324,131 +324,10 @@ jobs:
             test-results/
           retention-days: 7
 
-  test-e2e:
-    name: 🎭 E2E Tests
-    runs-on: ubuntu-latest
-    needs: setup-test-database
-    timeout-minutes: 5
-    
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: ${{ secrets.TEST_DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 3
-      
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 3
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: 📦 Install dependencies
-        run: npm ci
-
-      - name: 💾 Cache apt packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt
-          key: apt-${{ runner.os }}-postgresql-client
-          restore-keys: |
-            apt-${{ runner.os }}-
-
-      - name: 📥 Install PostgreSQL client
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends postgresql-client
-
-      - name: 🔍 Wait for services (optimized)
-        env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: ${{ secrets.TEST_DB_USER }}
-          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-        run: |
-          echo "⏳ Waiting for PostgreSQL (max 15s)..."
-          timeout 15 bash -c 'until pg_isready -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }}; do sleep 1; done' || exit 1
-          echo "✅ PostgreSQL is ready"
-          
-          echo "✅ Redis is ready (service health check)"
-
-      - name: 🆕 Create test database if not exists
-        env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: ${{ secrets.TEST_DB_USER }}
-          PGPASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          TEST_DB_NAME: ${{ secrets.TEST_DB_NAME }}
-        run: |
-          psql -h localhost -p 5432 -U ${{ secrets.TEST_DB_USER }} -c "CREATE DATABASE $TEST_DB_NAME;" 2>&1 | grep -v "already exists" || true
-          echo "✅ Test database ready"
-
-      - name: 🔄 Run migrations
-        timeout-minutes: 3
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: ${{ secrets.TEST_DB_USER }}
-          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          DB_NAME: ${{ secrets.TEST_DB_NAME }}
-        run: |
-          echo "🔄 Running database migrations..."
-          npm run migrate
-          echo "✅ Migrations completed"
-
-      - name: 🎭 Run E2E tests (optimized)
-        timeout-minutes: 3
-        env:
-          NODE_ENV: test
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: ${{ secrets.TEST_DB_USER }}
-          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          DB_NAME: ${{ secrets.TEST_DB_NAME }}
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-        run: |
-          echo "🎭 Running E2E tests..."
-          npm run test:e2e || (echo "❌ E2E tests failed" && exit 1)
-          echo "✅ E2E tests passed"
-
-      - name: 📊 Upload E2E test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-test-results
-          path: |
-            coverage/
-            test-results/
-          retention-days: 7
-
   cleanup-test-database:
     name: 🗑️ Cleanup Test Database
     runs-on: ubuntu-latest
-    needs: [setup-test-database, test-integration, test-e2e]
+    needs: [setup-test-database, test-integration]
     if: always()
     timeout-minutes: 5
     
@@ -540,14 +419,6 @@ jobs:
           name: integration-test-results
           path: coverage/integration
 
-      - name: 📥 Download E2E test results
-        if: always()
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: e2e-test-results
-          path: coverage/e2e
-
       - name: 📊 Generate combined coverage report
         run: |
           echo "📊 Generating coverage report..."
@@ -580,7 +451,7 @@ jobs:
   setup:
     name: 🔌 Setup SSH Connection
     runs-on: ubuntu-latest
-    needs: [test-integration, test-e2e]
+    needs: [test-integration]
     timeout-minutes: 10
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     

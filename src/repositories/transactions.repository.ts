@@ -1,5 +1,6 @@
 import { dbPool } from '@config/database.config';
-import type { Transaction, TransactionRow } from '@entities/transaction.entity';
+import type { TransactionRow } from '@entities/transaction.entity';
+import type { Transaction } from '@entities/transaction.entity';
 import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
 
 export class TransactionsRepository {
@@ -33,7 +34,7 @@ export class TransactionsRepository {
     }
   }
 
-  async findById(id: string): Promise<Transaction | undefined> {
+  async findById(id: string): Promise<Transaction | null> {
     const client = await dbPool.connect();
     try {
       const result = await client.query<TransactionRow>(
@@ -53,7 +54,7 @@ export class TransactionsRepository {
 
   async findByTransactionId(
     transactionId: string,
-  ): Promise<Transaction | undefined> {
+  ): Promise<Transaction | null> {
     const client = await dbPool.connect();
     try {
       const result = await client.query<TransactionRow>(

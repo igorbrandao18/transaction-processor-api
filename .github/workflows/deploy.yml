@@ -427,22 +427,45 @@ jobs:
             
             # Check if container is running
             echo "🔍 Checking if transaction-api container is running..."
+            cd /tmp/transaction-processor-api/docker
             if ! docker ps --format '{{.Names}}' | grep -q '^transaction-api$'; then
               echo "❌ ERROR: transaction-api container is not running"
               echo "📋 Checking container status..."
               docker ps -a | grep transaction-api || echo "Container not found"
               echo "📋 Checking docker compose status..."
-              cd /tmp/transaction-processor-api/docker
               docker compose ps
               echo "🚀 Attempting to start container..."
-              docker compose up -d transaction-api || {
-                echo "❌ Failed to start container"
-                echo "📋 Checking logs..."
-                docker compose logs transaction-api --tail 50 || true
-                exit 1
+              # Try to start the app service (which creates transaction-api container)
+              docker compose up -d app || {
+                echo "❌ Failed to start app service"
+                echo "📋 Checking if container exists but stopped..."
+                if docker ps -a --format '{{.Names}}' | grep -q '^transaction-api$'; then
+                  echo "🔄 Container exists but stopped, trying to start it directly..."
+                  docker start transaction-api || {
+                    echo "❌ Failed to start container directly"
+                    echo "📋 Checking logs..."
+                    docker logs transaction-api --tail 50 || true
+                    echo "📋 Checking docker compose logs..."
+                    docker compose logs app --tail 50 || true
+                    exit 1
+                  }
+                else
+                  echo "❌ Container does not exist"
+                  echo "📋 Checking docker compose logs..."
+                  docker compose logs app --tail 50 || true
+                  exit 1
+                fi
               }
               echo "⏳ Waiting for container to be ready..."
-              sleep 10
+              sleep 15
+              # Verify container is now running
+              if ! docker ps --format '{{.Names}}' | grep -q '^transaction-api$'; then
+                echo "❌ Container still not running after start attempt"
+                docker ps -a | grep transaction-api || echo "Container not found"
+                docker logs transaction-api --tail 50 || true
+                exit 1
+              fi
+              echo "✅ Container started successfully"
             else
               echo "✅ transaction-api container is running"
             fi

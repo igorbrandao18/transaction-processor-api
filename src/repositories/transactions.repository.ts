@@ -1,7 +1,18 @@
 import { dbPool } from '@config/database.config';
 import type { TransactionRow } from '@entities/transaction.entity';
-import type { Transaction } from '@entities/transaction.entity';
 import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
+
+type Transaction = {
+  id: string;
+  transactionId: string;
+  amount: number;
+  currency: string;
+  type: string;
+  status: string;
+  metadata?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 type TransactionOrUndefined = Transaction | undefined;
 

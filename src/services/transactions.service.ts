@@ -8,32 +8,48 @@ import { Transaction } from '@entities/transaction.entity';
 import type { CreateTransactionDto } from '@dto/create-transaction.dto';
 import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
 import { TransactionStatus } from '@entities/transaction.entity';
+import {
+  transactionsCreated,
+  databaseQueryDuration,
+} from '@config/metrics.config';
 
 @Injectable()
 export class TransactionsService {
   constructor(private readonly repository: TransactionsRepository) {}
 
   async create(dto: CreateTransactionDto): Promise<Transaction> {
-    const existing = await this.repository.findByTransactionId(
-      dto.transactionId,
-    );
-    if (existing) {
-      throw new ConflictException({
-        message: 'Transaction with this ID already exists',
-        existingTransaction: existing as Transaction,
+    const timer = databaseQueryDuration.startTimer({ operation: 'create' });
+
+    try {
+      const existing = await this.repository.findByTransactionId(
+        dto.transactionId,
+      );
+      if (existing) {
+        throw new ConflictException({
+          message: 'Transaction with this ID already exists',
+          existingTransaction: existing as Transaction,
+        });
+      }
+
+      const transaction = await this.repository.create({
+        transactionId: dto.transactionId,
+        amount: dto.amount,
+        currency: dto.currency,
+        type: dto.type,
+        status: dto.status || TransactionStatus.PENDING,
+        metadata: dto.metadata,
       });
+
+      transactionsCreated.inc({
+        type: dto.type,
+        status: dto.status || TransactionStatus.PENDING,
+        currency: dto.currency,
+      });
+
+      return transaction as Transaction;
+    } finally {
+      timer();
     }
-
-    const transaction = await this.repository.create({
-      transactionId: dto.transactionId,
-      amount: dto.amount,
-      currency: dto.currency,
-      type: dto.type,
-      status: dto.status || TransactionStatus.PENDING,
-      metadata: dto.metadata,
-    });
-
-    return transaction as Transaction;
   }
 
   async findById(id: string): Promise<Transaction> {

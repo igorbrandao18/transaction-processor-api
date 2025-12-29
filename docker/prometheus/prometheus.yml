@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'transaction-processor-monitor'
+
+scrape_configs:
+  - job_name: 'transaction-api'
+    metrics_path: '/api/metrics'
+    static_configs:
+      - targets: ['app:3000']
+        labels:
+          service: 'transaction-processor-api'
+          environment: 'development'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+

@@ -1,13 +1,16 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { AppController } from '@controllers/app.controller';
 import { AppService } from '@services/app.service';
 import { TransactionsController } from '@controllers/transactions.controller';
 import { HealthController } from '@controllers/health.controller';
+import { MetricsController } from '@controllers/metrics.controller';
 import { TransactionsService } from '@services/transactions.service';
 import { TransactionsRepository } from '@repositories/transactions.repository';
 import { TransactionsQueue } from '@queues/transactions.queue';
 import { TransactionProcessor } from '@processors/transaction.processor';
+import { MetricsMiddleware } from '@middleware/metrics.middleware';
+import { QueueMetricsService } from '@services/queue-metrics.service';
 
 @Module({
   imports: [
@@ -34,13 +37,24 @@ import { TransactionProcessor } from '@processors/transaction.processor';
       },
     }),
   ],
-  controllers: [AppController, TransactionsController, HealthController],
+  controllers: [
+    AppController,
+    TransactionsController,
+    HealthController,
+    MetricsController,
+  ],
   providers: [
     AppService,
     TransactionsService,
     TransactionsRepository,
     TransactionsQueue,
     TransactionProcessor,
+    MetricsMiddleware,
+    QueueMetricsService,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(MetricsMiddleware).forRoutes('*');
+  }
+}

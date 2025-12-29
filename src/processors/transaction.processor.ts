@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { Job } from 'bull';
 import { TransactionsService } from '@services/transactions.service';
 import type { CreateTransactionDto } from '@dto/create-transaction.dto';
+import { transactionsProcessed } from '@config/metrics.config';
 
 @Processor('transactions')
 @Injectable()
@@ -21,6 +22,8 @@ export class TransactionProcessor {
     try {
       const transaction = await this.transactionsService.create(job.data);
 
+      transactionsProcessed.inc({ status: 'success' });
+
       this.logger.log(`Transaction processed successfully: ${job.id}`, {
         transactionId: transaction.transactionId,
         transactionUuid: transaction.id,
@@ -29,6 +32,8 @@ export class TransactionProcessor {
 
       return transaction;
     } catch (error) {
+      transactionsProcessed.inc({ status: 'error' });
+
       this.logger.error(`Failed to process transaction: ${job.id}`, {
         transactionId: job.data.transactionId,
         jobId: job.id,

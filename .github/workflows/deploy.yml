@@ -219,7 +219,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: ${{ secrets.TEST_POSTGRES_DB }}
         ports:
-          - ${{ secrets.TEST_DB_PORT }}:5432
+          - ${{ env.TEST_DB_PORT }}:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -229,7 +229,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - ${{ secrets.TEST_REDIS_PORT }}:6379
+          - ${{ env.TEST_REDIS_PORT }}:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s

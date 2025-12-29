@@ -265,7 +265,7 @@ src/
 
 A imagem abaixo mostra o fluxo completo de processamento de uma transação pela mensageria:
 
-![Processamento de Transação pela Mensageria](docs/print134.png)
+![Processamento de Transação pela Mensageria](print134.png)
 
 **O que acontece na imagem:**
 1. **SELECT**: Verifica se a transação já existe (idempotência)

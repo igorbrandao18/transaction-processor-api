@@ -1,7 +1,18 @@
 import { dbPool } from '@config/database.config';
 import type { TransactionRow } from '@entities/transaction.entity';
-import { Transaction } from '@entities/transaction.entity';
 import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
+
+type TransactionEntity = {
+  id: string;
+  transactionId: string;
+  amount: number;
+  currency: string;
+  type: string;
+  status: string;
+  metadata?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export class TransactionsRepository {
   async create(transaction: {
@@ -11,7 +22,7 @@ export class TransactionsRepository {
     type: string;
     status: string;
     metadata?: Record<string, any>;
-  }): Promise<Transaction> {
+  }): Promise<TransactionEntity> {
     const client = await dbPool.connect();
     try {
       const result = await client.query<TransactionRow>(
@@ -34,7 +45,7 @@ export class TransactionsRepository {
     }
   }
 
-  async findById(id: string): Promise<Transaction | null> {
+  async findById(id: string): Promise<TransactionEntity | null> {
     const client = await dbPool.connect();
     try {
       const result = await client.query<TransactionRow>(
@@ -54,7 +65,7 @@ export class TransactionsRepository {
 
   async findByTransactionId(
     transactionId: string,
-  ): Promise<Transaction | null> {
+  ): Promise<TransactionEntity | null> {
     const client = await dbPool.connect();
     try {
       const result = await client.query<TransactionRow>(
@@ -73,7 +84,7 @@ export class TransactionsRepository {
   }
 
   async findAll(query: QueryTransactionsDto): Promise<{
-    transactions: Transaction[];
+    transactions: TransactionEntity[];
     total: number;
   }> {
     const client = await dbPool.connect();
@@ -134,7 +145,7 @@ export class TransactionsRepository {
     }
   }
 
-  private mapRowToTransaction(row: TransactionRow): Transaction {
+  private mapRowToTransaction(row: TransactionRow): TransactionEntity {
     return {
       id: row.id,
       transactionId: row.transaction_id,

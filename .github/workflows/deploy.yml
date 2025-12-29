@@ -948,6 +948,52 @@ jobs:
           fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+      - name: 📊 Verify Grafana endpoint
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Verifying Grafana endpoint..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          GRAFANA_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN/grafana/api/health || echo "000")
+          GRAFANA_RESPONSE=$(curl -s https://$DOMAIN/grafana/api/health 2>&1 || echo "error")
+          echo "   Grafana Status Code: $GRAFANA_STATUS"
+          echo "   Grafana Response: $GRAFANA_RESPONSE"
+          
+          if [ "$GRAFANA_STATUS" = "200" ]; then
+            if echo "$GRAFANA_RESPONSE" | grep -q '"database":"ok"'; then
+              echo "✅ Grafana is accessible and healthy"
+            else
+              echo "⚠️ Grafana is accessible but health check may be incorrect"
+            fi
+          else
+            echo "❌ Grafana endpoint returned status $GRAFANA_STATUS (expected 200)"
+            echo "   URL: https://$DOMAIN/grafana/"
+            exit 1
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: 📈 Verify Prometheus endpoint
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📈 Verifying Prometheus endpoint..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          PROMETHEUS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$DOMAIN/prometheus/-/healthy" || echo "000")
+          PROMETHEUS_RESPONSE=$(curl -s "https://$DOMAIN/prometheus/-/healthy" 2>&1 || echo "error")
+          echo "   Prometheus Status Code: $PROMETHEUS_STATUS"
+          echo "   Prometheus Response: $PROMETHEUS_RESPONSE"
+          
+          if [ "$PROMETHEUS_STATUS" = "200" ]; then
+            if echo "$PROMETHEUS_RESPONSE" | grep -q "Prometheus Server is Healthy"; then
+              echo "✅ Prometheus is accessible and healthy"
+            else
+              echo "⚠️ Prometheus is accessible but health check may be incorrect"
+            fi
+          else
+            echo "❌ Prometheus endpoint returned status $PROMETHEUS_STATUS (expected 200)"
+            echo "   URL: https://$DOMAIN/prometheus/"
+            exit 1
+          fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
       - name: 🔍 Verify Observability Stack
         run: |
           echo "::add-mask::$SSH_PASSWORD"
@@ -1062,4 +1108,6 @@ jobs:
           echo "✅ Application URL: https://$DOMAIN"
           echo "✅ Health Check: https://$DOMAIN/health"
           echo "✅ API Documentation: https://$DOMAIN/api/docs"
+          echo "✅ Grafana: https://$DOMAIN/grafana/"
+          echo "✅ Prometheus: https://$DOMAIN/prometheus/"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

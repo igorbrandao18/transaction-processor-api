@@ -1,6 +1,6 @@
 import { dbPool } from '@config/database.config';
 import type { TransactionRow } from '@entities/transaction.entity';
-import type { Transaction } from '@entities/transaction.entity';
+import { Transaction } from '@entities/transaction.entity';
 import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
 
 export class TransactionsRepository {

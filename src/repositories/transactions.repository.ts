@@ -34,7 +34,7 @@ export class TransactionsRepository {
     }
   }
 
-  async findById(id: string): Promise<TransactionOrUndefined> {
+  async findById(id: string): Promise<Transaction | null> {
     const client = await dbPool.connect();
     try {
       const result = await client.query<TransactionRow>(

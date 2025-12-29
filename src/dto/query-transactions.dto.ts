@@ -75,7 +75,7 @@ export class QueryTransactionsDto {
   @ApiPropertyOptional({
     description:
       'Filter transactions by status. Returns only transactions with the specified status.',
-    enum: () => TransactionStatus,
+    enum: TransactionStatus,
     example: 'pending',
     examples: {
       Pending: {
@@ -99,7 +99,7 @@ export class QueryTransactionsDto {
   @ApiPropertyOptional({
     description:
       'Filter transactions by type. Returns only transactions of the specified type.',
-    enum: () => TransactionType,
+    enum: TransactionType,
     example: 'credit',
     examples: {
       Credit: {

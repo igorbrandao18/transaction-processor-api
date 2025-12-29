@@ -36,7 +36,7 @@ export class PaginationMetaDto {
 export class PaginatedTransactionsResponseDto {
   @ApiProperty({
     description: 'Array of transaction objects matching the query criteria',
-    type: () => Transaction,
+    type: Transaction,
     isArray: true,
     example: [
       {

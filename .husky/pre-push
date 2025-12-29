@@ -1,6 +1,6 @@
 echo "🔍 Running lint (with auto-fix)..."
-npm run lint
+npm run lint -- --max-warnings=0 || exit 1
 
 echo "🧪 Running unit tests..."
-npm run test:unit
+npm run test:unit || exit 1
 

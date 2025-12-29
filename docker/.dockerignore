@@ -45,11 +45,6 @@ Thumbs.db
 logs
 *.log
 
-# Docker files (not needed inside container)
-docker
-.dockerignore
-docker-compose.yml
-
 # Misc
 .eslintcache
 .prettierignore

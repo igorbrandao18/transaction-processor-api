@@ -4,7 +4,7 @@ import {
   ValidationArguments,
 } from 'class-validator';
 
-const VALID_CURRENCIES = [
+export const VALID_CURRENCIES = [
   'USD',
   'EUR',
   'GBP',
@@ -45,7 +45,7 @@ const VALID_CURRENCIES = [
   'VND',
   'PKR',
   'BGN',
-];
+] as const;
 
 export function IsCurrencyCode(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
@@ -59,7 +59,9 @@ export function IsCurrencyCode(validationOptions?: ValidationOptions) {
           if (typeof value !== 'string') {
             return false;
           }
-          return VALID_CURRENCIES.includes(value.toUpperCase());
+          return VALID_CURRENCIES.includes(
+            value.toUpperCase() as (typeof VALID_CURRENCIES)[number],
+          );
         },
         defaultMessage(args: ValidationArguments) {
           return `${args.property} must be a valid ISO 4217 currency code (e.g., USD, EUR, BRL)`;

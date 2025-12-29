@@ -88,8 +88,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(container_cpu_usage_seconds_total{id=~\"/docker/.*\",cpu=\"total\"}[5m]) * 100",
-          "legendFormat": "{{id}}",
+          "expr": "rate(container_cpu_usage_seconds_total{name=~\"transaction-.*\"}[5m]) * 100",
+          "legendFormat": "{{name}}",
           "refId": "A"
         }
       ],
@@ -175,8 +175,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "container_memory_usage_bytes{id=~\"/docker/.*\"}",
-          "legendFormat": "{{id}}",
+          "expr": "container_memory_usage_bytes{name=~\"transaction-.*\"}",
+          "legendFormat": "{{name}}",
           "refId": "A"
         }
       ],
@@ -262,8 +262,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(container_network_receive_bytes_total{id=~\"/docker/.*\"}[5m])",
-          "legendFormat": "{{id}} - Receive",
+          "expr": "rate(container_network_receive_bytes_total{name=~\"transaction-.*\"}[5m])",
+          "legendFormat": "{{name}} - Receive",
           "refId": "A"
         },
         {
@@ -271,8 +271,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(container_network_transmit_bytes_total{id=~\"/docker/.*\"}[5m])",
-          "legendFormat": "{{id}} - Transmit",
+          "expr": "rate(container_network_transmit_bytes_total{name=~\"transaction-.*\"}[5m])",
+          "legendFormat": "{{name}} - Transmit",
           "refId": "B"
         }
       ],
@@ -358,8 +358,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(container_fs_reads_bytes_total{id=~\"/docker/.*\"}[5m])",
-          "legendFormat": "{{id}} - Read",
+          "expr": "rate(container_fs_reads_bytes_total{name=~\"transaction-.*\"}[5m])",
+          "legendFormat": "{{name}} - Read",
           "refId": "A"
         },
         {
@@ -367,8 +367,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(container_fs_writes_bytes_total{id=~\"/docker/.*\"}[5m])",
-          "legendFormat": "{{id}} - Write",
+          "expr": "rate(container_fs_writes_bytes_total{name=~\"transaction-.*\"}[5m])",
+          "legendFormat": "{{name}} - Write",
           "refId": "B"
         }
       ],

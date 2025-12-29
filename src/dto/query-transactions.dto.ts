@@ -75,19 +75,19 @@ export class QueryTransactionsDto {
   @ApiPropertyOptional({
     description:
       'Filter transactions by status. Returns only transactions with the specified status.',
-    enum: TransactionStatus,
-    example: TransactionStatus.PENDING,
+    enum: () => TransactionStatus,
+    example: 'pending',
     examples: {
       Pending: {
-        value: TransactionStatus.PENDING,
+        value: 'pending',
         summary: 'Transactions that are pending processing',
       },
       Completed: {
-        value: TransactionStatus.COMPLETED,
+        value: 'completed',
         summary: 'Transactions that have been completed successfully',
       },
       Failed: {
-        value: TransactionStatus.FAILED,
+        value: 'failed',
         summary: 'Transactions that have failed',
       },
     },
@@ -99,15 +99,15 @@ export class QueryTransactionsDto {
   @ApiPropertyOptional({
     description:
       'Filter transactions by type. Returns only transactions of the specified type.',
-    enum: TransactionType,
-    example: TransactionType.CREDIT,
+    enum: () => TransactionType,
+    example: 'credit',
     examples: {
       Credit: {
-        value: TransactionType.CREDIT,
+        value: 'credit',
         summary: 'Credit transactions (money received)',
       },
       Debit: {
-        value: TransactionType.DEBIT,
+        value: 'debit',
         summary: 'Debit transactions (money sent)',
       },
     },

@@ -40,12 +40,12 @@ describe('app.config', () => {
   it('should configure Swagger documentation', () => {
     configureApp(mockApp as INestApplication);
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    expect(SwaggerModule.createDocument).toHaveBeenCalledTimes(1);
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    expect(SwaggerModule.setup).toHaveBeenCalledTimes(1);
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    expect(SwaggerModule.setup).toHaveBeenCalledWith(
+    const createDocumentSpy = jest.spyOn(SwaggerModule, 'createDocument');
+    const setupSpy = jest.spyOn(SwaggerModule, 'setup');
+
+    expect(createDocumentSpy).toHaveBeenCalledTimes(1);
+    expect(setupSpy).toHaveBeenCalledTimes(1);
+    expect(setupSpy).toHaveBeenCalledWith(
       'api/docs',
       mockApp,
       expect.any(Object),

@@ -1,8 +1,4 @@
-import {
-  Transaction,
-  TransactionType,
-  TransactionStatus,
-} from '@entities/transaction.entity';
+import type { Transaction } from '@entities/transaction.entity';
 
 export const mockTransaction: Omit<
   Transaction,
@@ -11,8 +7,8 @@ export const mockTransaction: Omit<
   transactionId: 'test-transaction-id-123',
   amount: 100.5,
   currency: 'BRL',
-  type: TransactionType.CREDIT,
-  status: TransactionStatus.PENDING,
+  type: 'credit',
+  status: 'pending',
   metadata: {
     source: 'test',
     reference: 'test-order-123',
@@ -24,8 +20,8 @@ export const mockTransactionResponse: Transaction = {
   transactionId: 'test-transaction-id-123',
   amount: 100.5,
   currency: 'BRL',
-  type: TransactionType.CREDIT,
-  status: TransactionStatus.PENDING,
+  type: 'credit',
+  status: 'pending',
   metadata: {
     source: 'test',
     reference: 'test-order-123',

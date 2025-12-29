@@ -130,11 +130,11 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 └─────────────────────────────────────┘
 ```
 
-**Benefícios:**
-- **Testabilidade**: Cada camada pode ser testada isoladamente
-- **Manutenibilidade**: Mudanças em uma camada não afetam outras
-- **Escalabilidade**: Fácil adicionar novos recursos sem quebrar código existente
-- **Clareza**: Responsabilidades bem definidas facilitam onboarding
+**Benefícios que busquei ao organizar assim:**
+- **Testabilidade**: Cada camada pode ser testada isoladamente, o que facilita muito os testes unitários
+- **Manutenibilidade**: Mudanças em uma camada não afetam outras, reduzindo o risco de quebrar algo
+- **Escalabilidade**: Consigo adicionar novos recursos sem quebrar código existente
+- **Clareza**: Responsabilidades bem definidas facilitam tanto meu trabalho quanto o onboarding de outros devs
 
 **Padrões implementados:**
 - **Repository Pattern**: Isola acesso ao banco de dados
@@ -529,4 +529,4 @@ Veja `.github/workflows/deploy.yml` para detalhes.
 
 ## 📝 Licença
 
-Este projeto foi desenvolvido como parte de um desafio técnico.
+Este projeto foi desenvolvido por **Igor Brandão** como parte de um desafio técnico.

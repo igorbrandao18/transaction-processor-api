@@ -475,16 +475,39 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔍 Testing SSH connection..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          if sshpass -p "$SSH_PASSWORD" ssh \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -o ConnectTimeout=10 \
-            $SSH_USER@$SSH_HOST "echo '✅ SSH connection successful' && hostname"; then
-            echo "✅ SSH connection established"
-          else
-            echo "❌ SSH connection failed"
-            exit 1
-          fi
+          # Retry SSH connection up to 3 times with increasing timeout
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          CONNECT_TIMEOUT=30
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "🔄 Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES to connect to SSH server..."
+            if sshpass -p "$SSH_PASSWORD" ssh \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o ConnectTimeout=$CONNECT_TIMEOUT \
+              -o ServerAliveInterval=60 \
+              -o ServerAliveCountMax=3 \
+              $SSH_USER@$SSH_HOST "echo '✅ SSH connection successful' && hostname"; then
+              echo "✅ SSH connection established"
+              break
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⏳ Waiting 5 seconds before retry..."
+                sleep 5
+                CONNECT_TIMEOUT=$((CONNECT_TIMEOUT + 10))
+              else
+                echo "❌ SSH connection failed after $MAX_RETRIES attempts"
+                echo "⚠️ Possible issues:"
+                echo "   - Server may be offline or unreachable"
+                echo "   - Firewall may be blocking SSH (port 22)"
+                echo "   - IP address may have changed"
+                echo "   - Network connectivity issues"
+                exit 1
+              fi
+            fi
+          done
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   backup:

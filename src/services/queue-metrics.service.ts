@@ -8,9 +8,9 @@ export class QueueMetricsService implements OnModuleInit {
   constructor(@InjectQueue('transactions') private readonly queue: Queue) {}
 
   onModuleInit() {
-    this.updateQueueMetrics();
+    void this.updateQueueMetrics();
     setInterval(() => {
-      this.updateQueueMetrics();
+      void this.updateQueueMetrics();
     }, 5000);
   }
 

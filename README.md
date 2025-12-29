@@ -93,9 +93,13 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 **2. Métricas**
 - ✅ Health Check (`GET /api/health`)
 - ✅ Swagger/OpenAPI (`GET /api/docs`)
-- ⏳ **Próximo passo**: Prometheus + Grafana
-  - Métricas: taxa de requisições, latência, erros
-  - Alertas: taxa de erro > 5%, latência > 1s
+- ✅ **Prometheus + Grafana** - Implementado e ativo
+  - ✅ Endpoint `/api/metrics` expondo métricas Prometheus
+  - ✅ Métricas HTTP: taxa de requisições, latência, erros
+  - ✅ Métricas de transações: criadas, processadas, fila
+  - ✅ Métricas de banco de dados: conexões, duração de queries
+  - ✅ Dashboards Grafana pré-configurados
+  - ✅ Prometheus coletando métricas a cada 15s
 
 **3. Tracing**
 - ⏳ **Próximo passo**: OpenTelemetry

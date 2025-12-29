@@ -1,8 +1,9 @@
-import { TransactionType } from '@entities/transaction.entity';
+import { TransactionType, TransactionStatus } from '@entities/transaction.entity';
 export declare class CreateTransactionDto {
-    transactionId?: string;
+    transactionId: string;
     amount: number;
     currency: string;
     type: TransactionType;
+    status?: TransactionStatus;
     metadata?: Record<string, any>;
 }

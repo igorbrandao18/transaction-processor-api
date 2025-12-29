@@ -1,4 +1,11 @@
-import type { Response } from 'express';
 export declare class HealthController {
-    check(res: Response): Promise<Response<any, Record<string, any>>>;
+    check(): Promise<{
+        status: string;
+        timestamp: string;
+        service: string;
+        version: string;
+        checks: {
+            database: string;
+        };
+    }>;
 }

@@ -8,198 +8,84 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateTransactionDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
-const transaction_entity_1 = require("../entities/transaction.entity");
-const validators_1 = require("../utils/validators");
+const transaction_entity_1 = require("@entities/transaction.entity");
 class CreateTransactionDto {
     transactionId;
     amount;
     currency;
     type;
+    status;
     metadata;
 }
 exports.CreateTransactionDto = CreateTransactionDto;
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Unique transaction identifier (for idempotency). If not provided, a UUID will be generated automatically by the backend. This ID must be unique across all transactions. If a transaction with this ID already exists, the existing transaction will be returned instead of creating a new one.',
-        example: 'txn-2024-01-15-abc123def456',
+    (0, swagger_1.ApiProperty)({
+        description: 'Unique transaction identifier (must be unique across the system)',
+        example: 'txn-2024-01-15-abc123',
+        minLength: 1,
         maxLength: 255,
-        pattern: '^[a-zA-Z0-9-_]+$',
-        examples: {
-            'Payment Gateway': {
-                value: 'pg-payment-12345-20240115',
-                summary: 'Payment gateway transaction ID (for idempotency)',
-            },
-            'E-commerce Order': {
-                value: 'order-789456-2024-01-15',
-                summary: 'E-commerce order transaction ID (for idempotency)',
-            },
-            'Auto-generated': {
-                value: undefined,
-                summary: 'If not provided, backend will generate UUID automatically',
-            },
-        },
-        required: false,
     }),
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MaxLength)(255),
     __metadata("design:type", String)
 ], CreateTransactionDto.prototype, "transactionId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Transaction amount in the specified currency. Must be a positive number with maximum 2 decimal places.',
+        description: 'Transaction amount (must be positive)',
         example: 100.5,
-        minimum: 0,
-        maximum: 999999999.99,
-        examples: {
-            'Small Amount': {
-                value: 10.99,
-                summary: 'Small transaction amount',
-            },
-            'Medium Amount': {
-                value: 1000.5,
-                summary: 'Medium transaction amount',
-            },
-            'Large Amount': {
-                value: 50000.0,
-                summary: 'Large transaction amount',
-            },
-        },
+        minimum: 0.01,
     }),
+    (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, validators_1.IsAmountPrecision)(),
+    (0, class_validator_1.Min)(0.01),
     __metadata("design:type", Number)
 ], CreateTransactionDto.prototype, "amount", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Currency code following ISO 4217 standard. Supported currencies include major world currencies.',
+        description: 'Currency code (ISO 4217 format, e.g., BRL, USD, EUR)',
         example: 'BRL',
-        enum: [
-            'USD',
-            'EUR',
-            'GBP',
-            'BRL',
-            'JPY',
-            'AUD',
-            'CAD',
-            'CHF',
-            'CNY',
-            'SEK',
-            'NZD',
-            'MXN',
-            'SGD',
-            'HKD',
-            'NOK',
-            'TRY',
-            'RUB',
-            'INR',
-            'ZAR',
-            'DKK',
-            'PLN',
-            'TWD',
-            'THB',
-            'MYR',
-            'CZK',
-            'HUF',
-            'ILS',
-            'CLP',
-            'PHP',
-            'AED',
-            'COP',
-            'SAR',
-            'IDR',
-            'KRW',
-            'EGP',
-            'IQD',
-            'ARS',
-            'VND',
-            'PKR',
-            'BGN',
-        ],
-        examples: {
-            'Brazilian Real': {
-                value: 'BRL',
-                summary: 'Brazilian Real',
-            },
-            'US Dollar': {
-                value: 'USD',
-                summary: 'US Dollar',
-            },
-            Euro: {
-                value: 'EUR',
-                summary: 'Euro',
-            },
-        },
+        minLength: 3,
+        maxLength: 3,
     }),
+    (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsString)(),
-    (0, validators_1.IsCurrencyCode)(),
     __metadata("design:type", String)
 ], CreateTransactionDto.prototype, "currency", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Type of transaction. CREDIT represents money coming in, DEBIT represents money going out.',
+        description: 'Transaction type',
         enum: transaction_entity_1.TransactionType,
         example: transaction_entity_1.TransactionType.CREDIT,
-        examples: {
-            'Credit Transaction': {
-                value: transaction_entity_1.TransactionType.CREDIT,
-                summary: 'Money received (deposit, payment received, etc.)',
-            },
-            'Debit Transaction': {
-                value: transaction_entity_1.TransactionType.DEBIT,
-                summary: 'Money sent (withdrawal, payment made, etc.)',
-            },
-        },
     }),
+    (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsEnum)(transaction_entity_1.TransactionType),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_a = typeof transaction_entity_1.TransactionType !== "undefined" && transaction_entity_1.TransactionType) === "function" ? _a : Object)
 ], CreateTransactionDto.prototype, "type", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Additional metadata as a JSON object. Can include any custom fields relevant to the transaction (e.g., source, reference, customer info, etc.).',
+        description: 'Transaction status (defaults to "pending" if not provided)',
+        enum: transaction_entity_1.TransactionStatus,
+        example: transaction_entity_1.TransactionStatus.PENDING,
+        default: transaction_entity_1.TransactionStatus.PENDING,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(transaction_entity_1.TransactionStatus),
+    __metadata("design:type", typeof (_b = typeof transaction_entity_1.TransactionStatus !== "undefined" && transaction_entity_1.TransactionStatus) === "function" ? _b : Object)
+], CreateTransactionDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Additional metadata associated with the transaction',
         example: {
             source: 'payment-gateway',
             reference: 'order-123',
-            customerId: 'cust-456',
-            paymentMethod: 'credit-card',
-            merchantId: 'merchant-789',
-        },
-        examples: {
-            'Payment Gateway': {
-                value: {
-                    source: 'stripe',
-                    paymentIntentId: 'pi_1234567890',
-                    customerEmail: 'customer@example.com',
-                },
-                summary: 'Payment gateway metadata',
-            },
-            'E-commerce': {
-                value: {
-                    source: 'ecommerce-platform',
-                    orderId: 'ORD-12345',
-                    customerId: 'CUST-67890',
-                    items: ['item1', 'item2'],
-                },
-                summary: 'E-commerce order metadata',
-            },
-            'Bank Transfer': {
-                value: {
-                    source: 'bank-api',
-                    transferId: 'TRF-987654',
-                    accountFrom: 'ACC-111',
-                    accountTo: 'ACC-222',
-                },
-                summary: 'Bank transfer metadata',
-            },
         },
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsObject)(),
     __metadata("design:type", Object)
 ], CreateTransactionDto.prototype, "metadata", void 0);
 //# sourceMappingURL=create-transaction.dto.js.map

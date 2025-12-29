@@ -1,19 +1,30 @@
-import { Transaction, TransactionStatus } from '@entities/transaction.entity';
+import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
+type TransactionEntity = {
+    id: string;
+    transactionId: string;
+    amount: number;
+    currency: string;
+    type: string;
+    status: string;
+    metadata?: Record<string, any>;
+    createdAt: Date;
+    updatedAt: Date;
+};
 export declare class TransactionsRepository {
-    private mapRowToEntity;
-    create(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>): Promise<Transaction>;
-    findById(id: string): Promise<Transaction | null>;
-    findByTransactionId(transactionId: string): Promise<Transaction | null>;
-    findAll(query: {
-        page?: number;
-        limit?: number;
-        status?: TransactionStatus;
-        type?: string;
-        startDate?: string;
-        endDate?: string;
-    }): Promise<{
-        transactions: Transaction[];
+    create(transaction: {
+        transactionId: string;
+        amount: number;
+        currency: string;
+        type: string;
+        status: string;
+        metadata?: Record<string, any>;
+    }): Promise<TransactionEntity>;
+    findById(id: string): Promise<TransactionEntity | null>;
+    findByTransactionId(transactionId: string): Promise<TransactionEntity | null>;
+    findAll(query: QueryTransactionsDto): Promise<{
+        transactions: TransactionEntity[];
         total: number;
     }>;
-    updateStatus(id: string, status: TransactionStatus): Promise<Transaction>;
+    private mapRowToTransaction;
 }
+export {};

@@ -1,2 +1,2 @@
-import winston from 'winston';
-export declare const logger: winston.Logger;
+import type { Logger } from 'winston';
+export declare const logger: Logger;

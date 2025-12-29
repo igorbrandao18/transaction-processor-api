@@ -8,12 +8,13 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QueryTransactionsDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
-const transaction_entity_1 = require("../entities/transaction.entity");
+const transaction_entity_1 = require("@entities/transaction.entity");
 class QueryTransactionsDto {
     page = 1;
     limit = 20;
@@ -87,45 +88,45 @@ __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'Filter transactions by status. Returns only transactions with the specified status.',
         enum: transaction_entity_1.TransactionStatus,
-        example: transaction_entity_1.TransactionStatus.PENDING,
+        example: 'pending',
         examples: {
             Pending: {
-                value: transaction_entity_1.TransactionStatus.PENDING,
+                value: 'pending',
                 summary: 'Transactions that are pending processing',
             },
             Completed: {
-                value: transaction_entity_1.TransactionStatus.COMPLETED,
+                value: 'completed',
                 summary: 'Transactions that have been completed successfully',
             },
             Failed: {
-                value: transaction_entity_1.TransactionStatus.FAILED,
+                value: 'failed',
                 summary: 'Transactions that have failed',
             },
         },
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(transaction_entity_1.TransactionStatus),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_a = typeof transaction_entity_1.TransactionStatus !== "undefined" && transaction_entity_1.TransactionStatus) === "function" ? _a : Object)
 ], QueryTransactionsDto.prototype, "status", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'Filter transactions by type. Returns only transactions of the specified type.',
         enum: transaction_entity_1.TransactionType,
-        example: transaction_entity_1.TransactionType.CREDIT,
+        example: 'credit',
         examples: {
             Credit: {
-                value: transaction_entity_1.TransactionType.CREDIT,
+                value: 'credit',
                 summary: 'Credit transactions (money received)',
             },
             Debit: {
-                value: transaction_entity_1.TransactionType.DEBIT,
+                value: 'debit',
                 summary: 'Debit transactions (money sent)',
             },
         },
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(transaction_entity_1.TransactionType),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_b = typeof transaction_entity_1.TransactionType !== "undefined" && transaction_entity_1.TransactionType) === "function" ? _b : Object)
 ], QueryTransactionsDto.prototype, "type", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({

@@ -1,13 +1,13 @@
 import { TransactionsRepository } from '@repositories/transactions.repository';
-import { CreateTransactionDto } from '@dto/create-transaction.dto';
-import { QueryTransactionsDto } from '@dto/query-transactions.dto';
-import { Transaction, TransactionStatus } from '@entities/transaction.entity';
+import { Transaction } from '@entities/transaction.entity';
+import type { CreateTransactionDto } from '@dto/create-transaction.dto';
+import type { QueryTransactionsDto } from '@dto/query-transactions.dto';
 export declare class TransactionsService {
-    private readonly transactionsRepository;
-    constructor(transactionsRepository: TransactionsRepository);
-    create(createTransactionDto: CreateTransactionDto): Promise<Transaction>;
-    findOne(id: string): Promise<Transaction>;
-    findAll(queryDto: QueryTransactionsDto): Promise<{
+    private readonly repository;
+    constructor(repository: TransactionsRepository);
+    create(dto: CreateTransactionDto): Promise<Transaction>;
+    findById(id: string): Promise<Transaction>;
+    findAll(query: QueryTransactionsDto): Promise<{
         data: Transaction[];
         pagination: {
             page: number;
@@ -16,6 +16,9 @@ export declare class TransactionsService {
             totalPages: number;
         };
     }>;
-    updateStatus(id: string, status: TransactionStatus): Promise<Transaction>;
-    findByTransactionId(transactionId: string): Promise<Transaction | null>;
+    getMetadata(): {
+        types: string[];
+        statuses: string[];
+        currencies: string[];
+    };
 }

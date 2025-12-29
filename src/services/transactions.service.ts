@@ -20,7 +20,7 @@ export class TransactionsService {
     if (existing) {
       throw new ConflictException({
         message: 'Transaction with this ID already exists',
-        existingTransaction: existing,
+        existingTransaction: existing as Transaction,
       });
     }
 
@@ -33,7 +33,7 @@ export class TransactionsService {
       metadata: dto.metadata,
     });
 
-    return transaction;
+    return transaction as Transaction;
   }
 
   async findById(id: string): Promise<Transaction> {
@@ -41,7 +41,7 @@ export class TransactionsService {
     if (!transaction) {
       throw new NotFoundException(`Transaction with ID ${id} not found`);
     }
-    return transaction;
+    return transaction as Transaction;
   }
 
   async findAll(query: QueryTransactionsDto): Promise<{
@@ -59,7 +59,7 @@ export class TransactionsService {
     const { transactions, total } = await this.repository.findAll(query);
 
     return {
-      data: transactions,
+      data: transactions as Transaction[],
       pagination: {
         page,
         limit,

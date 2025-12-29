@@ -121,7 +121,7 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 1. **Processamento assíncrono de transações**
    - **Cenário**: Validações complexas, integrações externas (gateways de pagamento)
    - **Benefício**: API responde rápido, processamento em background
-   - **Implementação**: ✅ BullMQ já configurado
+   - **Status**: ⏳ Infraestrutura pronta (Redis + dependências), código não implementado
 
 2. **Envio de notificações**
    - **Cenário**: Email, SMS, webhooks para clientes
@@ -136,7 +136,7 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 4. **Retry automático de falhas**
    - **Cenário**: Integração externa falhou temporariamente
    - **Benefício**: Retry automático com backoff exponencial
-   - **Implementação**: ✅ BullMQ com `attempts` e `backoff`
+   - **Status**: ⏳ Infraestrutura pronta, código não implementado (seria com BullMQ `attempts` e `backoff`)
 
 **❌ NÃO usaria fila em:**
 
@@ -298,7 +298,7 @@ export const dbPool = new Pool({
 - **Language**: TypeScript
 - **Database**: PostgreSQL 15
 - **ORM**: Raw SQL com `pg` (PostgreSQL driver)
-- **Message Queue**: BullMQ (Redis)
+- **Message Queue**: BullMQ (Redis) - ⏳ Infraestrutura pronta, código não implementado
 - **Logging**: Winston (JSON structured logs)
 - **Validation**: class-validator
 - **Documentation**: Swagger/OpenAPI

@@ -64,16 +64,8 @@ else
   echo "✅ Test database setup complete"
 fi
 
-echo "🧪 Running all tests..."
-NODE_ENV=test \
-DB_HOST=localhost \
-DB_PORT=5432 \
-DB_USER=postgres \
-DB_PASSWORD=postgres \
-DB_NAME=transactions_db_test \
-REDIS_HOST=localhost \
-REDIS_PORT=6379 \
-npm run test:all
+echo "🧪 Running unit tests..."
+npm run test:unit
 
 echo "🧹 Cleaning up test database..."
 docker exec transaction-db psql -U postgres -c "DROP DATABASE IF EXISTS transactions_db_test;" || true

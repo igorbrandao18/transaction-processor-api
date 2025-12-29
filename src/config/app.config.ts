@@ -1,8 +1,12 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { swaggerConfig, swaggerDocumentOptions, swaggerSetupOptions } from './swagger.config';
+import { SwaggerModule } from '@nestjs/swagger';
+import {
+  swaggerConfig,
+  swaggerDocumentOptions,
+  swaggerSetupOptions,
+} from './swagger.config';
 
-export async function configureApp(app: INestApplication): Promise<void> {
+export function configureApp(app: INestApplication): void {
   // Set global prefix for all routes
   app.setGlobalPrefix('api');
 
@@ -19,7 +23,10 @@ export async function configureApp(app: INestApplication): Promise<void> {
   );
 
   // Setup Swagger documentation
-  const document = SwaggerModule.createDocument(app, swaggerConfig, swaggerDocumentOptions);
+  const document = SwaggerModule.createDocument(
+    app,
+    swaggerConfig,
+    swaggerDocumentOptions,
+  );
   SwaggerModule.setup('api/docs', app, document, swaggerSetupOptions);
 }
-

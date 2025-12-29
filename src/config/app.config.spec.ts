@@ -22,28 +22,34 @@ describe('app.config', () => {
     (SwaggerModule.setup as jest.Mock) = jest.fn();
   });
 
-  it('should set global prefix to "api"', async () => {
-    await configureApp(mockApp as INestApplication);
+  it('should set global prefix to "api"', () => {
+    configureApp(mockApp as INestApplication);
 
-    expect(mockApp.setGlobalPrefix).toHaveBeenCalledWith('api');
+    const setGlobalPrefixMock = mockApp.setGlobalPrefix as jest.Mock;
+    expect(setGlobalPrefixMock).toHaveBeenCalledWith('api');
+    expect(setGlobalPrefixMock).toHaveBeenCalledTimes(1);
   });
 
-  it('should configure validation pipe', async () => {
-    await configureApp(mockApp as INestApplication);
+  it('should configure validation pipe', () => {
+    configureApp(mockApp as INestApplication);
 
-    expect(mockApp.useGlobalPipes).toHaveBeenCalled();
+    const useGlobalPipesMock = mockApp.useGlobalPipes as jest.Mock;
+    expect(useGlobalPipesMock).toHaveBeenCalledTimes(1);
   });
 
-  it('should configure Swagger documentation', async () => {
-    await configureApp(mockApp as INestApplication);
+  it('should configure Swagger documentation', () => {
+    configureApp(mockApp as INestApplication);
 
-    expect(SwaggerModule.createDocument).toHaveBeenCalled();
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(SwaggerModule.createDocument).toHaveBeenCalledTimes(1);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(SwaggerModule.setup).toHaveBeenCalledTimes(1);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(SwaggerModule.setup).toHaveBeenCalledWith(
       'api/docs',
       mockApp,
-      {},
+      expect.any(Object),
       expect.any(Object),
     );
   });
 });
-

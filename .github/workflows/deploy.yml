@@ -766,21 +766,14 @@ jobs:
             
             if [ "$DB_EXISTS" = "yes" ]; then
               echo "✅ Production database '$DB_NAME' already exists - preserving existing data"
-              echo "⚠️  Skipping backup restore to avoid data loss"
-              echo "📊 Database will use existing data from volume"
+              echo "📊 Database will use existing data from volume (no data loss)"
+              echo "💾 Backup is available for manual rollback if needed"
             else
-              echo "📥 Production database '$DB_NAME' does not exist - restoring backup if available..."
-              BACKUP_DIR="/tmp/backups"
-              LATEST_BACKUP=$(ls -t "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -1)
-              if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
-                echo "📦 Found backup: $LATEST_BACKUP"
-                docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "CREATE DATABASE $DB_NAME;" || echo "⚠️ Database may already exist"
-                cat "$LATEST_BACKUP" | docker exec -i transaction-db psql -U "$DB_USER" -d "$DB_NAME" || echo "⚠️ Backup restore failed (OK for first deployment)"
-                echo "✅ Backup restored successfully"
-              else
-                echo "⚠️ No backup found - database will be created empty (first deployment)"
-                docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "CREATE DATABASE $DB_NAME;" || echo "⚠️ Database may already exist"
-              fi
+              echo "📥 Production database '$DB_NAME' does not exist - creating new database..."
+              echo "⚠️  This is likely the first deployment"
+              docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "CREATE DATABASE $DB_NAME;" || echo "⚠️ Database may already exist"
+              echo "✅ Production database created"
+              echo "💾 Backup will be created after migrations for future rollback"
             fi
             
             echo "⏳ Waiting for application..."

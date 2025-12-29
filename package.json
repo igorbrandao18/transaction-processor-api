@@ -22,6 +22,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:load": "k6 run test/load/transactions.load.js",
+    "test:load:stress": "k6 run test/load/transactions.stress.js",
+    "test:load:idempotency": "k6 run test/load/idempotency.stress.js",
+    "test:load:spike": "k6 run test/load/spike.stress.js",
     "migrate": "ts-node migrations/run.ts",
     "prepare": "husky"
   },

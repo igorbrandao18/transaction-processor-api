@@ -6,6 +6,11 @@ const swagger_1 = require("@nestjs/swagger");
 const swagger_config_1 = require("./swagger.config");
 function configureApp(app) {
     app.setGlobalPrefix('api');
+    app.enableCors({
+        origin: '*',
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+    });
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,

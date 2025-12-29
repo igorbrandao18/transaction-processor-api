@@ -9,6 +9,13 @@ import {
 export function configureApp(app: INestApplication): void {
   app.setGlobalPrefix('api');
 
+  // Enable CORS for all origins
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

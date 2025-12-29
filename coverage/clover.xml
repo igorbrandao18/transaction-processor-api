@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1767018967429" clover="3.2.0">
-  <project timestamp="1767018967429" name="All files">
-    <metrics statements="348" coveredstatements="9" conditionals="176" coveredconditionals="3" methods="57" coveredmethods="3" elements="581" coveredelements="15" complexity="0" loc="348" ncloc="348" packages="11" files="25" classes="25"/>
+<coverage generated="1767019354402" clover="3.2.0">
+  <project timestamp="1767019354402" name="All files">
+    <metrics statements="349" coveredstatements="9" conditionals="176" coveredconditionals="3" methods="57" coveredmethods="3" elements="582" coveredelements="15" complexity="0" loc="349" ncloc="349" packages="11" files="25" classes="25"/>
     <package name="src">
       <metrics statements="25" coveredstatements="9" conditionals="18" coveredconditionals="3" methods="4" coveredmethods="3"/>
       <file name="app.controller.ts" path="/Users/igorbrandao/Desktop/development/front/desafio/transaction-processor-api/src/app.controller.ts">
@@ -349,42 +349,43 @@
       </file>
     </package>
     <package name="src.repositories">
-      <metrics statements="33" coveredstatements="0" conditionals="28" coveredconditionals="0" methods="7" coveredmethods="0"/>
+      <metrics statements="34" coveredstatements="0" conditionals="28" coveredconditionals="0" methods="7" coveredmethods="0"/>
       <file name="transactions.repository.ts" path="/Users/igorbrandao/Desktop/development/front/desafio/transaction-processor-api/src/repositories/transactions.repository.ts">
-        <metrics statements="33" coveredstatements="0" conditionals="28" coveredconditionals="0" methods="7" coveredmethods="0"/>
+        <metrics statements="34" coveredstatements="0" conditionals="28" coveredconditionals="0" methods="7" coveredmethods="0"/>
         <line num="1" count="0" type="stmt"/>
         <line num="2" count="0" type="stmt"/>
         <line num="4" count="0" type="stmt"/>
-        <line num="19" count="0" type="stmt"/>
-        <line num="20" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="30" count="0" type="stmt"/>
-        <line num="41" count="0" type="stmt"/>
-        <line num="45" count="0" type="stmt"/>
-        <line num="49" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="50" count="0" type="stmt"/>
-        <line num="53" count="0" type="stmt"/>
-        <line num="59" count="0" type="stmt"/>
-        <line num="63" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="64" count="0" type="stmt"/>
-        <line num="67" count="0" type="stmt"/>
-        <line num="74" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="75" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="76" count="0" type="stmt"/>
+        <line num="5" count="0" type="stmt"/>
+        <line num="20" count="0" type="stmt"/>
+        <line num="21" count="0" type="cond" truecount="0" falsecount="4"/>
+        <line num="31" count="0" type="stmt"/>
+        <line num="43" count="0" type="stmt"/>
+        <line num="47" count="0" type="stmt"/>
+        <line num="51" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="52" count="0" type="stmt"/>
+        <line num="55" count="0" type="stmt"/>
+        <line num="61" count="0" type="stmt"/>
+        <line num="65" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="66" count="0" type="stmt"/>
+        <line num="69" count="0" type="stmt"/>
+        <line num="76" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="77" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="78" count="0" type="stmt"/>
-        <line num="80" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="81" count="0" type="stmt"/>
-        <line num="84" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="85" count="0" type="stmt"/>
-        <line num="88" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="89" count="0" type="stmt"/>
-        <line num="90" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="80" count="0" type="stmt"/>
+        <line num="82" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="83" count="0" type="stmt"/>
+        <line num="86" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="87" count="0" type="stmt"/>
+        <line num="90" count="0" type="cond" truecount="0" falsecount="4"/>
         <line num="91" count="0" type="stmt"/>
-        <line num="93" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="94" count="0" type="stmt"/>
-        <line num="98" count="0" type="stmt"/>
-        <line num="108" count="0" type="stmt"/>
-        <line num="109" count="0" type="stmt"/>
-        <line num="125" count="0" type="stmt"/>
+        <line num="92" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="93" count="0" type="stmt"/>
+        <line num="95" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="96" count="0" type="stmt"/>
+        <line num="100" count="0" type="stmt"/>
+        <line num="110" count="0" type="stmt"/>
+        <line num="111" count="0" type="stmt"/>
+        <line num="127" count="0" type="stmt"/>
       </file>
     </package>
     <package name="src.services">

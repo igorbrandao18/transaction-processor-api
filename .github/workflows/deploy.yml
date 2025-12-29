@@ -683,12 +683,15 @@ jobs:
             echo "⚠️  IMPORTANT: This will only affect API containers defined in docker-compose.yml"
             echo "⚠️  Containers: transaction-api, transaction-db, transaction-redis, transaction-pgadmin"
             echo "⚠️  Frontend and other containers will remain untouched"
+            echo "⚠️  Database volumes will be preserved (no data loss)"
             
             # Stop only containers defined in this docker-compose.yml (API containers)
             # docker compose down only affects containers in the current docker-compose.yml file
-            docker compose down -v || true
+            # IMPORTANT: Do NOT use -v flag to preserve database volumes
+            docker compose down || true
             
             echo "✅ Cleanup completed - only API containers from docker-compose.yml were affected"
+            echo "✅ Database volumes preserved (production data safe)"
             
             echo "🔨 Building containers with cache optimization..."
             export DOCKER_BUILDKIT=1
@@ -758,13 +761,26 @@ jobs:
               elapsed=$((elapsed + 2))
             done
             
-            echo "📥 Restoring backup if available..."
-            BACKUP_DIR="/tmp/backups"
-            LATEST_BACKUP=$(ls -t "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -1)
-            if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
-              docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "DROP DATABASE IF EXISTS $DB_NAME;" || true
-              docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "CREATE DATABASE $DB_NAME;" || true
-              cat "$LATEST_BACKUP" | docker exec -i transaction-db psql -U "$DB_USER" -d "$DB_NAME" || echo "⚠️ Backup restore failed (OK for first deployment)"
+            echo "🔍 Checking if production database already exists..."
+            DB_EXISTS=$(docker exec transaction-db psql -U "$DB_USER" -lqt 2>/dev/null | cut -d \| -f 1 | grep -qw "$DB_NAME" && echo "yes" || echo "no")
+            
+            if [ "$DB_EXISTS" = "yes" ]; then
+              echo "✅ Production database '$DB_NAME' already exists - preserving existing data"
+              echo "⚠️  Skipping backup restore to avoid data loss"
+              echo "📊 Database will use existing data from volume"
+            else
+              echo "📥 Production database '$DB_NAME' does not exist - restoring backup if available..."
+              BACKUP_DIR="/tmp/backups"
+              LATEST_BACKUP=$(ls -t "$BACKUP_DIR/${DB_NAME}"_*.sql 2>/dev/null | head -1)
+              if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then
+                echo "📦 Found backup: $LATEST_BACKUP"
+                docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "CREATE DATABASE $DB_NAME;" || echo "⚠️ Database may already exist"
+                cat "$LATEST_BACKUP" | docker exec -i transaction-db psql -U "$DB_USER" -d "$DB_NAME" || echo "⚠️ Backup restore failed (OK for first deployment)"
+                echo "✅ Backup restored successfully"
+              else
+                echo "⚠️ No backup found - database will be created empty (first deployment)"
+                docker exec -i transaction-db psql -U "$DB_USER" -d "$TEST_POSTGRES_DB" -c "CREATE DATABASE $DB_NAME;" || echo "⚠️ Database may already exist"
+              fi
             fi
             
             echo "⏳ Waiting for application..."

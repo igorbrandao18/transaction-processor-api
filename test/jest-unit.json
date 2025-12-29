@@ -5,6 +5,7 @@
   "testMatch": ["<rootDir>/src/**/*.spec.ts"],
   "moduleNameMapper": {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^@app\\.module$": "<rootDir>/src/app.module",
     "^@config/(.*)$": "<rootDir>/src/config/$1",
     "^@entities/(.*)$": "<rootDir>/src/entities/$1",
     "^@controllers/(.*)$": "<rootDir>/src/controllers/$1",

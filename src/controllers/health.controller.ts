@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
-import { dbPool } from '../config/database.config';
-import { logger } from '../config/logger.config';
+import { dbPool } from '@config/database.config';
+import { logger } from '@config/logger.config';
 
 @Controller('health')
 export class HealthController {
@@ -17,7 +17,6 @@ export class HealthController {
     };
 
     try {
-      // Check database connection
       const client = await dbPool.connect();
       await client.query('SELECT 1');
       client.release();

@@ -4,13 +4,11 @@ import {
   swaggerConfig,
   swaggerDocumentOptions,
   swaggerSetupOptions,
-} from './swagger.config';
+} from '@config/swagger.config';
 
 export function configureApp(app: INestApplication): void {
-  // Set global prefix for all routes
   app.setGlobalPrefix('api');
 
-  // Setup validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -22,7 +20,6 @@ export function configureApp(app: INestApplication): void {
     }),
   );
 
-  // Setup Swagger documentation
   const document = SwaggerModule.createDocument(
     app,
     swaggerConfig,

@@ -13,7 +13,29 @@
     "^@dto/(.*)$": "<rootDir>/src/dto/$1",
     "^@filters/(.*)$": "<rootDir>/src/filters/$1",
     "^@middleware/(.*)$": "<rootDir>/src/middleware/$1",
-    "^@utils/(.*)$": "<rootDir>/src/utils/$1"
+    "^@utils/(.*)$": "<rootDir>/src/utils/$1",
+    "^@queues/(.*)$": "<rootDir>/src/queues/$1",
+    "^@processors/(.*)$": "<rootDir>/src/processors/$1"
+  },
+  "transform": {
+    "^.+\\.ts$": ["ts-jest", {
+      "tsconfig": {
+        "paths": {
+          "@/*": ["src/*"],
+          "@config/*": ["src/config/*"],
+          "@entities/*": ["src/entities/*"],
+          "@controllers/*": ["src/controllers/*"],
+          "@services/*": ["src/services/*"],
+          "@repositories/*": ["src/repositories/*"],
+          "@dto/*": ["src/dto/*"],
+          "@filters/*": ["src/filters/*"],
+          "@middleware/*": ["src/middleware/*"],
+          "@utils/*": ["src/utils/*"],
+          "@queues/*": ["src/queues/*"],
+          "@processors/*": ["src/processors/*"]
+        }
+      }
+    }]
   },
   "collectCoverageFrom": [
     "src/**/*.(t|j)s"

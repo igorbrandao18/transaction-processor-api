@@ -220,8 +220,8 @@ jobs:
               --exclude='node_modules' --exclude='dist' --exclude='build' \
               --exclude='test' --exclude='coverage' --exclude='*.spec.ts' \
               --exclude='.git' --exclude='docker' --exclude='*.md' \
-              src/ package*.json tsconfig*.json nest-cli.json migrations/ \
-              eslint.config.mjs .prettierrc 2>&1
+              src/ package*.json tsconfig*.json nest-cli.json prisma/ \
+              eslint.config.mjs .prettierrc prisma.config.ts 2>&1
             
             echo "✅ Archive created: $(du -h app.tar.gz | cut -f1)"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -291,6 +291,15 @@ jobs:
             
             echo "⏳ Waiting for services to initialize..."
             sleep 15
+            
+            # Copy Prisma files to container after it starts
+            echo "📦 Copying Prisma files to container..."
+            if [ -d "/tmp/transaction-processor-api/prisma" ]; then
+              docker cp /tmp/transaction-processor-api/prisma transaction-api:/app/prisma || echo "⚠️ Could not copy prisma directory"
+              docker cp /tmp/transaction-processor-api/prisma.config.ts transaction-api:/app/prisma.config.ts || echo "⚠️ Could not copy prisma.config.ts"
+            else
+              echo "⚠️ Prisma directory not found at /tmp/transaction-processor-api/prisma"
+            fi
             
             cd /tmp/transaction-processor-api
             rm -f app.tar.gz || true
@@ -402,15 +411,62 @@ jobs:
       - name: 🔄 Run migrations and verify status
         run: |
           echo "::add-mask::$SSH_PASSWORD"
+          echo "::add-mask::$DB_PASSWORD"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔄 Finalizing deployment (migrations + verification)..."
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            $SSH_USER@$SSH_HOST << 'ENDSSH'
-            echo "🔄 Running database migrations..."
-            docker exec transaction-api npm run migrate || echo "⚠️ Migrations may have already been applied"
+            $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD='$DB_PASSWORD' DATABASE_URL='postgresql://$DB_USER:$DB_PASSWORD@transaction-db:5432/$DB_NAME?schema=public' bash -s" << 'ENDSSH'
+            echo "🔄 Running Prisma migrations..."
+            echo "📋 Migration details:"
+            echo "   Database: $DB_NAME"
+            echo "   User: $DB_USER"
+            echo "   Host: transaction-db:5432"
+            echo ""
+            
+            # Check if Prisma schema exists
+            if [ -f "/tmp/transaction-processor-api/prisma/schema.prisma" ]; then
+              echo "✅ Prisma schema found"
+            else
+              echo "❌ ERROR: Prisma schema not found at /tmp/transaction-processor-api/prisma/schema.prisma"
+              echo "📋 Checking available files..."
+              ls -la /tmp/transaction-processor-api/ | head -20
+              exit 1
+            fi
+            
+            # Check if migrations directory exists
+            if [ -d "/tmp/transaction-processor-api/prisma/migrations" ]; then
+              echo "✅ Migrations directory found"
+              MIGRATION_COUNT=$(find /tmp/transaction-processor-api/prisma/migrations -mindepth 1 -maxdepth 1 -type d | wc -l)
+              echo "   Found $MIGRATION_COUNT migration(s)"
+            else
+              echo "⚠️  WARNING: Migrations directory not found"
+            fi
+            
+            # Copy Prisma files to container if needed
+            echo "📦 Copying Prisma files to container..."
+            docker cp /tmp/transaction-processor-api/prisma transaction-api:/app/prisma || {
+              echo "⚠️  Could not copy prisma directory, checking if it already exists..."
+              docker exec transaction-api ls -la /app/prisma 2>&1 || echo "Prisma directory does not exist in container"
+            }
+            
+            # Run migrations
+            echo "🔄 Executing Prisma migrations..."
+            docker exec transaction-api sh -c "cd /app && DATABASE_URL='$DATABASE_URL' npx prisma migrate deploy" || {
+              echo "⚠️  Migration command failed, checking logs..."
+              docker logs transaction-api --tail 50 | grep -i "migration\|prisma\|error" || true
+              echo "⚠️  Attempting alternative migration method..."
+              docker exec transaction-api sh -c "cd /app && DATABASE_URL='$DATABASE_URL' npm run migrate" || {
+                echo "❌ ERROR: All migration attempts failed"
+                echo "📋 Checking Prisma installation..."
+                docker exec transaction-api sh -c "cd /app && npx prisma --version" || echo "Prisma not found"
+                exit 1
+              }
+            }
+            
+            echo "✅ Migrations completed successfully"
             
             echo "📊 Deployment status:"
             cd /tmp/transaction-processor-api/docker

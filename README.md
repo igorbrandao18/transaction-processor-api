@@ -261,6 +261,23 @@ src/
      - Status atualizado de `pending` → `completed` após processamento
      - Retry automático: 3 tentativas com backoff exponencial
 
+**Exemplo prático do processamento:**
+
+A imagem abaixo mostra o fluxo completo de processamento de uma transação pela mensageria:
+
+![Processamento de Transação pela Mensageria](docs/print134.png)
+
+**O que acontece na imagem:**
+1. **SELECT**: Verifica se a transação já existe (idempotência)
+2. **INSERT**: Cria a transação no banco com status `pending`
+3. **UPDATE**: Atualiza o status para `completed` após processamento bem-sucedido
+4. **Logs**: `TransactionProcessor` confirma processamento com:
+   - `transactionId`: ID único da transação
+   - `transactionUuid`: UUID interno do banco
+   - `jobId`: ID do job na fila BullMQ
+   - `status: 'completed'`: Status final após processamento
+5. **SELECT COUNT**: Consultas subsequentes para listagem paginada
+
 2. **Envio de notificações**
    - **Cenário**: Email, SMS, webhooks para clientes
    - **Benefício**: Não bloqueia resposta da API

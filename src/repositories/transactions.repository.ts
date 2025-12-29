@@ -120,7 +120,7 @@ export class TransactionsRepository {
     currency: string;
     type: TransactionType;
     status: TransactionStatus;
-    metadata: unknown | null;
+    metadata: Record<string, any> | null;
     createdAt: Date;
     updatedAt: Date;
   }): TransactionEntity {

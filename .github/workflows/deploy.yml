@@ -679,21 +679,24 @@ jobs:
             $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD='$DB_PASSWORD' bash -s" << 'ENDSSH'
             cd /tmp/transaction-processor-api/docker
             
-            echo "🛑 Stopping existing containers..."
-            echo "⚠️  IMPORTANT: This will only stop backend containers, frontend will remain running"
+            echo "🛑 Stopping existing API containers only..."
+            echo "⚠️  IMPORTANT: This will only affect API containers (transaction-api, transaction-db, transaction-redis, transaction-pgadmin)"
+            echo "⚠️  Frontend and other containers will remain untouched"
+            
+            # Stop only containers defined in this docker-compose.yml (API containers)
             docker compose down -v || true
             
-            echo "🧹 Cleaning up unused containers (excluding frontend)..."
-            # List all stopped containers and remove only those without frontend label
-            # Skip cleanup to avoid affecting frontend - docker compose down already cleans backend containers
-            echo "⚠️  Skipping container prune to protect frontend - backend containers already cleaned by docker compose down"
+            echo "🧹 Cleaning up stopped API containers only..."
+            # Remove only containers that match API container names
+            API_CONTAINERS="transaction-api transaction-db transaction-redis transaction-pgadmin"
+            for container in $API_CONTAINERS; do
+              if docker ps -a --format "{{.Names}}" | grep -q "^${container}$"; then
+                echo "  Removing stopped container: $container"
+                docker rm -f "$container" 2>/dev/null || true
+              fi
+            done
             
-            echo "🧹 Cleaning up unused volumes (excluding frontend volumes)..."
-            # Only prune volumes that don't have the frontend label
-            # Note: docker volume prune doesn't support negative filters, so we skip it to be safe
-            # docker volume prune -f || true  # Commented out to protect frontend volumes
-            
-            echo "✅ Cleanup completed - frontend container preserved"
+            echo "✅ Cleanup completed - only API containers affected"
             
             echo "🔨 Building containers with cache optimization..."
             export DOCKER_BUILDKIT=1

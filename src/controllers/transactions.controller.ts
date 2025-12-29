@@ -43,7 +43,7 @@ export class TransactionsController {
   async create(
     @Body() createTransactionDto: CreateTransactionDto,
   ): Promise<Transaction> {
-    return this.transactionsService.create(createTransactionDto);
+    return await this.transactionsService.create(createTransactionDto);
   }
 
   @Get()

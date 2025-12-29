@@ -120,7 +120,7 @@ export class TransactionsRepository {
     currency: string;
     type: TransactionType;
     status: TransactionStatus;
-    metadata: Prisma.JsonValue | null;
+    metadata: unknown | null;
     createdAt: Date;
     updatedAt: Date;
   }): TransactionEntity {

@@ -685,10 +685,8 @@ jobs:
             
             echo "🧹 Cleaning up unused containers (excluding frontend)..."
             # List all stopped containers and remove only those without frontend label
-            STOPPED_CONTAINERS=$(docker ps -a --filter "status=exited" --format "{{.ID}} {{.Labels}}" | grep -v "com.transaction-processor.service=frontend" | awk '{print $1}' || true)
-            if [ -n "$STOPPED_CONTAINERS" ]; then
-              echo "$STOPPED_CONTAINERS" | xargs -r docker rm -f || true
-            fi
+            # Skip cleanup to avoid affecting frontend - docker compose down already cleans backend containers
+            echo "⚠️  Skipping container prune to protect frontend - backend containers already cleaned by docker compose down"
             
             echo "🧹 Cleaning up unused volumes (excluding frontend volumes)..."
             # Only prune volumes that don't have the frontend label

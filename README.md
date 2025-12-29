@@ -1,19 +1,118 @@
 # Transaction Processor API
 
-API para processamento de transações financeiras desenvolvida com NestJS, TypeScript e PostgreSQL.
+API para processamento de transações financeiras desenvolvida com NestJS, TypeScript e PostgreSQL, atendendo requisitos de confiabilidade, escalabilidade, observabilidade e facilidade de evolução.
 
-## 🎯 Funcionalidades
+## 🚀 Como Executar o Projeto
 
-- ✅ Receber transações financeiras via API (`POST /api/transactions`) - **Processamento assíncrono com BullMQ**
-- ✅ Persistir transações em banco de dados relacional (PostgreSQL)
-- ✅ Garantir idempotência com controle de concorrência
-- ✅ Consultar transações com paginação e filtros (`GET /api/transactions`)
+### Pré-requisitos
+
+- Node.js 20+
+- Docker e Docker Compose
+- PostgreSQL 15+ (ou usar Docker)
+- Redis 7+ (ou usar Docker)
+
+### Opção 1: Docker Compose (Recomendado)
+
+```bash
+# Clone o repositório
+git clone <repository-url>
+cd transaction-processor-api
+
+# Execute com Docker Compose
+cd docker
+docker compose up -d
+
+# Aguarde os serviços iniciarem (migrações são executadas automaticamente)
+# Verifique o status
+docker compose ps
+```
+
+**Serviços disponíveis:**
+- **API**: http://localhost:3000
+- **Swagger/OpenAPI**: http://localhost:3000/api/docs
+- **Health Check**: http://localhost:3000/api/health
+- **PostgreSQL**: localhost:5432
+- **Redis**: localhost:6379
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3001
+
+### Opção 2: Desenvolvimento Local
+
+```bash
+# Instale dependências
+npm install
+
+# Configure variáveis de ambiente
+cp .env.example .env
+# Edite .env com suas configurações
+
+# Execute migrações do Prisma
+npm run migrate
+
+# Inicie o servidor de desenvolvimento
+npm run start:dev
+```
+
+### Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=transactions_db
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/transactions_db?schema=public
+
+# Redis (BullMQ)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# Logging
+LOG_LEVEL=info
+```
+
+## 🎯 Funcionalidades Implementadas
+
+### Funcionalidades Mínimas (Obrigatórias)
+
+- ✅ **Receber transações financeiras via API** (`POST /api/transactions`)
+  - Processamento assíncrono com BullMQ (fila de mensageria)
+  - Retorna `202 Accepted` imediatamente com `jobId`
+  - Processamento em background
+
+- ✅ **Persistir transações** em banco de dados relacional (PostgreSQL)
+  - Schema com Prisma ORM
+  - Migrations automáticas
+
+- ✅ **Garantir idempotência** considerando concorrência e múltiplas requisições simultâneas
+  - UNIQUE INDEX no campo `transaction_id`
+  - Verificação antes de inserir no Service
+  - Retorno `409 Conflict` se transação já existe
+  - Transações de banco para atomicidade
+
+- ✅ **Consultar transações** (`GET /api/transactions`)
+  - Paginação (page, limit)
+  - Filtros por status, tipo, data
+  - Ordenação por data de criação
+
+### Funcionalidades Extras
+
 - ✅ Obter metadados para formulários (`GET /api/transactions/metadata`)
 - ✅ Buscar transação por ID (`GET /api/transactions/:id`)
 - ✅ Consultar status de job na fila (`GET /api/transactions/queue/:transactionId/status`)
 - ✅ Estatísticas da fila (`GET /api/transactions/queue/stats`)
+- ✅ Health check (`GET /api/health`)
+- ✅ Métricas Prometheus (`GET /api/metrics`)
 
-## 🏗️ Arquitetura
+## 🏗️ Arquitetura & Decisões
 
 ### Por que organizei o projeto dessa forma?
 
@@ -42,6 +141,34 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 - **Service Layer Pattern**: Centraliza lógica de negócio e idempotência
 - **DTO Pattern**: Valida entrada e controla exposição de dados
 - **Dependency Injection**: Facilita testes e manutenção (NestJS)
+
+**Estrutura do projeto:**
+```
+src/
+├── controllers/          # Presentation Layer
+│   ├── transactions.controller.ts
+│   ├── health.controller.ts
+│   └── metrics.controller.ts
+├── services/            # Application Layer
+│   ├── transactions.service.ts
+│   └── queue-metrics.service.ts
+├── repositories/        # Infrastructure Layer
+│   └── transactions.repository.ts
+├── entities/            # Domain Layer
+│   └── transaction.entity.ts
+├── processors/          # Background Workers
+│   └── transaction.processor.ts
+├── queues/             # Queue Management
+│   └── transactions.queue.ts
+├── dto/                # Data Transfer Objects
+│   ├── create-transaction.dto.ts
+│   └── query-transactions.dto.ts
+├── config/            # Configuration
+│   ├── app.config.ts
+│   ├── prisma.service.ts
+│   └── metrics.config.ts
+└── main.ts            # Entry point
+```
 
 ## 🗄️ Cache
 
@@ -82,24 +209,24 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 
 ## 📊 Observabilidade em Produção
 
-### Estratégia de Observabilidade
+### Como garantiria observabilidade?
 
 **1. Logs Estruturados (JSON)**
 - ✅ Implementado com Winston
 - Formato JSON para fácil parsing
 - Níveis: `error`, `warn`, `info`, `debug`
-- Contexto incluído: `requestId`, `userId`, `transactionId`
+- Contexto incluído: `requestId`, `transactionId`, `jobId`
 
 **2. Métricas**
 - ✅ Health Check (`GET /api/health`)
 - ✅ Swagger/OpenAPI (`GET /api/docs`)
 - ✅ **Prometheus + Grafana** - Implementado e ativo
-  - ✅ Endpoint `/api/metrics` expondo métricas Prometheus
-  - ✅ Métricas HTTP: taxa de requisições, latência, erros
-  - ✅ Métricas de transações: criadas, processadas, fila
-  - ✅ Métricas de banco de dados: conexões, duração de queries
-  - ✅ Dashboards Grafana pré-configurados
-  - ✅ Prometheus coletando métricas a cada 15s
+  - Endpoint `/api/metrics` expondo métricas Prometheus
+  - Métricas HTTP: taxa de requisições, latência, erros
+  - Métricas de transações: criadas, processadas, fila
+  - Métricas de banco de dados: conexões, duração de queries
+  - Dashboards Grafana pré-configurados
+  - Prometheus coletando métricas a cada 15s
 
 **3. Tracing**
 - ⏳ **Próximo passo**: OpenTelemetry
@@ -120,14 +247,19 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 
 ## 🔄 Fila/Mensageria
 
-### Quando usaria fila?
+### Em que cenário você usaria fila/mensageria?
 
 **✅ Usaria fila em:**
 
-1. **Processamento assíncrono de transações**
+1. **Processamento assíncrono de transações** ✅ **IMPLEMENTADO**
    - **Cenário**: Validações complexas, integrações externas (gateways de pagamento)
    - **Benefício**: API responde rápido, processamento em background
-   - **Status**: ✅ Implementado - POST /api/transactions enfileira e retorna 202 Accepted
+   - **Status**: BullMQ totalmente funcional
+   - **Como funciona**: 
+     - `POST /api/transactions` enfileira job e retorna `202 Accepted` imediatamente
+     - Worker processa em background (`TransactionProcessor`)
+     - Status atualizado de `pending` → `completed` após processamento
+     - Retry automático: 3 tentativas com backoff exponencial
 
 2. **Envio de notificações**
    - **Cenário**: Email, SMS, webhooks para clientes
@@ -156,7 +288,7 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 
 ## 🔍 Gargalos e Primeiro Problema em Produção
 
-### Onde estaria o gargalo?
+### Onde estaria o gargalo nesta implementação?
 
 **1. Banco de Dados (PostgreSQL) - PRINCIPAL GARGALO**
 - **Problema**: Escrita em disco, conexões limitadas, queries sem índice
@@ -196,7 +328,7 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 - Taxa de erro 503 aumenta
 - Banco mostra muitas conexões idle
 
-### Qual solução priorizaria primeiro e por quê?
+### Qual solução você priorizaria primeiro e por quê?
 
 **🎯 SOLUÇÃO PRIORITÁRIA #1: Otimizar Pool de Conexões**
 
@@ -211,21 +343,6 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 - ✅ **Baixo risco**: Mudança de configuração, sem alterar código
 - ✅ **Rápido de implementar**: Apenas ajuste de variáveis de ambiente
 - ✅ **Base para outras otimizações**: Sistema estável permite outras melhorias
-
-**Código:**
-```typescript
-// database.config.ts
-export const dbPool = new Pool({
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '5432'),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  max: 100, // Aumentado de 20 para 100
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-});
-```
 
 **🎯 SOLUÇÃO PRIORITÁRIA #2: Implementar Cache (Redis)**
 
@@ -261,13 +378,13 @@ export const dbPool = new Pool({
 
 ## 💡 Dívida Técnica Consciente
 
-### O que deixaria como dívida técnica?
+### O que você deixaria como dívida técnica?
 
-**1. Migrations Manuais (Sem Ferramenta Dedicada)**
-- **Status**: Migrations em SQL puro com runner simples
-- **Motivo**: Funciona para MVP, não é crítico agora
-- **Quando resolver**: Quando houver múltiplos desenvolvedores ou muitas migrations
-- **Solução futura**: TypeORM Migrations ou Prisma Migrate
+**1. Cache não implementado**
+- **Status**: Redis disponível, mas cache não implementado nos endpoints
+- **Motivo**: MVP funciona sem cache, não é crítico agora
+- **Quando resolver**: Quando volume de requisições aumentar significativamente
+- **Solução futura**: Implementar cache com Redis nos endpoints GET
 
 **2. Logs sem Correlação de Requisições (Request ID)**
 - **Status**: Logs estruturados, mas sem trace ID único por requisição
@@ -301,52 +418,19 @@ export const dbPool = new Pool({
 
 ## 🚀 Tecnologias
 
-- **Runtime**: Node.js 18+
+- **Runtime**: Node.js 20+
 - **Framework**: NestJS
 - **Language**: TypeScript
 - **Database**: PostgreSQL 15
-- **ORM**: Raw SQL com `pg` (PostgreSQL driver)
+- **ORM**: Prisma
 - **Message Queue**: BullMQ (Redis) - ✅ Implementado e funcionando
 - **Logging**: Winston (JSON structured logs)
 - **Validation**: class-validator
 - **Documentation**: Swagger/OpenAPI
-- **Testing**: Jest (unit, integration, e2e), k6 (load)
-
-## 📦 Estrutura do Projeto
-
-```
-src/
-├── controllers/          # Presentation Layer
-│   ├── transactions.controller.ts
-│   └── health.controller.ts
-├── services/            # Application Layer
-│   └── transactions.service.ts
-├── repositories/        # Infrastructure Layer
-│   └── transactions.repository.ts
-├── entities/            # Domain Layer
-│   └── transaction.entity.ts
-├── dto/                # Data Transfer Objects
-│   ├── create-transaction.dto.ts
-│   └── query-transactions.dto.ts
-├── middleware/         # Custom middlewares
-│   ├── error-handler.middleware.ts
-│   └── logger.middleware.ts
-├── config/            # Configuration
-│   ├── database.config.ts
-│   ├── logger.config.ts
-│   └── swagger.config.ts
-└── main.ts            # Entry point
-```
+- **Testing**: Jest (unit, integration, e2e)
+- **Monitoring**: Prometheus + Grafana
 
 ## 🧪 Testes
-
-### Cobertura de Testes
-
-- ✅ **Unit Tests**: Services, Repositories, Utils
-- ✅ **Integration Tests**: API endpoints com banco real
-- ✅ **E2E Tests**: Fluxo completo de transações
-- ✅ **Idempotency Tests**: Requisições concorrentes
-- ✅ **Load Tests**: k6 para performance
 
 ### Executar Testes
 
@@ -360,54 +444,26 @@ npm run test:integration
 # E2E tests
 npm run test:e2e
 
-# Load tests
-npm run test:load
+# Todos os testes
+npm run test:all
 ```
 
-## 🐳 Docker
+### Cobertura de Testes
 
-### Desenvolvimento Local
-
-```bash
-cd docker
-docker compose up -d
-```
-
-Serviços disponíveis:
-- **API**: http://localhost:3000
-- **Swagger**: http://localhost:3000/api/docs
-- **PostgreSQL**: localhost:5432
-- **Redis**: localhost:6379
-- **pgAdmin**: http://localhost:5050
-
-### Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz:
-
-```env
-# Server
-PORT=3000
-NODE_ENV=development
-
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=transactions_db
-
-# Redis (BullMQ)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-# Logging
-LOG_LEVEL=info
-```
+- ✅ **Unit Tests**: Services, Repositories, Utils
+- ✅ **Integration Tests**: API endpoints com banco real
+- ✅ **E2E Tests**: Fluxo completo de transações
+- ✅ **Idempotency Tests**: Requisições concorrentes
 
 ## 📚 Documentação da API
 
 Acesse a documentação Swagger em: `http://localhost:3000/api/docs`
+
+A documentação inclui:
+- Todos os endpoints disponíveis
+- Schemas de request/response
+- Exemplos de uso
+- Testes interativos
 
 ## 🔐 Idempotência
 
@@ -418,6 +474,29 @@ A API garante idempotência através de:
 3. **Retorno 409 Conflict** se transação já existe
 4. **Transações de banco** para atomicidade em requisições concorrentes
 
+**Exemplo:**
+```bash
+# Primeira requisição - cria transação
+POST /api/transactions
+{
+  "transactionId": "txn-123",
+  "amount": 100.50,
+  "currency": "BRL",
+  "type": "credit"
+}
+# Retorna: 202 Accepted com jobId
+
+# Segunda requisição com mesmo transactionId - retorna existente
+POST /api/transactions
+{
+  "transactionId": "txn-123",  # Mesmo ID
+  "amount": 100.50,
+  "currency": "BRL",
+  "type": "credit"
+}
+# Retorna: 409 Conflict com transação existente
+```
+
 ## 📈 Performance
 
 ### Otimizações Implementadas
@@ -426,6 +505,7 @@ A API garante idempotência através de:
 - ✅ Paginação em todas as listagens
 - ✅ Pool de conexões configurado
 - ✅ Queries parametrizadas (evita SQL injection e melhora cache do PostgreSQL)
+- ✅ Processamento assíncrono com BullMQ (não bloqueia API)
 
 ### Próximas Otimizações
 
@@ -438,15 +518,15 @@ A API garante idempotência através de:
 
 O projeto está configurado para deploy via GitHub Actions:
 
-- ✅ CI/CD pipeline (lint, testes, build)
+- ✅ CI/CD pipeline (testes, build)
 - ✅ Deploy automático no push para `main`
 - ✅ Docker Compose no servidor
 - ✅ Nginx como reverse proxy
 - ✅ SSL/TLS via Let's Encrypt
+- ✅ Migrations automáticas do Prisma
 
 Veja `.github/workflows/deploy.yml` para detalhes.
 
 ## 📝 Licença
 
 Este projeto foi desenvolvido como parte de um desafio técnico.
-

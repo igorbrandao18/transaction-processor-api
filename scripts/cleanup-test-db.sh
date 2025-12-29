@@ -12,3 +12,4 @@ else
   echo "⚠️ PostgreSQL container is not running. Nothing to clean up."
 fi
 
+

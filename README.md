@@ -1,220 +1,250 @@
 # Transaction Processor API
 
-Financial transaction processing service built with NestJS, TypeScript, and PostgreSQL.
+A reliable, scalable, and observable transaction processing service built with Node.js and NestJS for a B2B multi-tenant product with high traffic volume and external integrations.
 
-## Features
+## 🎯 Overview
 
-- ✅ Receive financial transactions via API
-- ✅ Persist transactions in PostgreSQL
-- ✅ **Idempotency** - Same transaction cannot be processed twice (handles concurrency)
-- ✅ Query transactions with filters and pagination
-- ✅ Structured logging with Winston
-- ✅ Error handling middleware
-- ✅ Input validation with class-validator
-- ✅ **Rate Limiting** - 100 requests/minute per IP (@nestjs/throttler)
-- ✅ **Health Check** - GET /health endpoint for monitoring
-- ✅ **Swagger/OpenAPI** - Interactive API documentation at /api/docs
-- ✅ **Enhanced Validations** - Currency codes (ISO 4217), amount precision
-- ✅ **Docker Support** - Dockerfile and docker-compose.yml
-- ✅ **Comprehensive Tests** - Unit, Integration, E2E, and Load tests (k6)
+This service handles financial transaction processing with the following core capabilities:
 
-## Architecture
+- **Receive transactions** via REST API
+- **Persist transactions** in PostgreSQL database
+- **Ensure idempotency** - prevent duplicate processing even under concurrent load
+- **Query transactions** with filtering and pagination
 
-This project follows **Layered Architecture** pattern:
+## 🏗️ Architecture & Technical Decisions
 
-- **Presentation Layer** (Controllers) - Handles HTTP requests
-- **Application Layer** (Services) - Business logic and orchestration
-- **Domain Layer** (Entities) - Domain models and types
-- **Infrastructure Layer** (Repositories) - Data access abstraction
+### Why This Architecture?
 
-### Patterns Used
-
-1. **Repository Pattern** - Abstracts data access
-2. **Service Layer Pattern** - Centralizes business logic
-3. **DTO Pattern** - Separates input/output data
-4. **Dependency Injection** - NestJS built-in DI
-
-## Prerequisites
-
-- Node.js 18+
-- PostgreSQL 12+
-- npm or yarn
-
-## Installation
-
-```bash
-# Install dependencies
-npm install
-
-# Copy environment variables
-cp .env.example .env
-
-# Update .env with your database credentials
-```
-
-## Database Setup
-
-```bash
-# Create database
-createdb transactions_db
-
-# Run migrations
-npm run migrate
-```
-
-## Running the Application
-
-```bash
-# Development mode
-npm run start:dev
-
-# Production mode
-npm run build
-npm run start:prod
-```
-
-The API will be available at `http://localhost:3000`
-
-## API Endpoints
-
-### POST /transactions
-Create a new transaction
-
-**Request:**
-```json
-{
-  "transactionId": "unique-transaction-id-123",
-  "amount": 100.50,
-  "currency": "BRL",
-  "type": "credit",
-  "metadata": {
-    "source": "payment-gateway",
-    "reference": "order-123"
-  }
-}
-```
-
-**Response (201 Created):**
-```json
-{
-  "id": "uuid",
-  "transactionId": "unique-transaction-id-123",
-  "amount": 100.50,
-  "currency": "BRL",
-  "type": "credit",
-  "status": "pending",
-  "createdAt": "2024-01-01T00:00:00Z"
-}
-```
-
-**Response (409 Conflict - Duplicate):**
-```json
-{
-  "error": "Transaction already exists",
-  "transactionId": "unique-transaction-id-123",
-  "existingTransaction": { ... }
-}
-```
-
-### GET /transactions
-List transactions with pagination
-
-**Query Parameters:**
-- `page` (number, default: 1)
-- `limit` (number, default: 20, max: 100)
-- `status` (string, optional: "pending" | "completed" | "failed")
-- `type` (string, optional: "credit" | "debit")
-- `startDate` (ISO string, optional)
-- `endDate` (ISO string, optional)
-
-**Response:**
-```json
-{
-  "data": [...],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 100,
-    "totalPages": 5
-  }
-}
-```
-
-### GET /transactions/:id
-Get transaction by ID
-
-**Response:**
-```json
-{
-  "id": "uuid",
-  "transactionId": "unique-transaction-id-123",
-  "amount": 100.50,
-  "currency": "BRL",
-  "type": "credit",
-  "status": "pending",
-  "metadata": {...},
-  "createdAt": "2024-01-01T00:00:00Z",
-  "updatedAt": "2024-01-01T00:00:00Z"
-}
-```
-
-## Idempotency Strategy
-
-The system ensures idempotency through:
-
-1. **Unique Index** on `transaction_id` column in database
-2. **Database Transactions** (BEGIN/COMMIT) for atomicity
-3. **SELECT FOR UPDATE** to handle concurrent requests
-4. **Conflict Detection** - Returns 409 if transaction already exists
-
-### Flow:
-```
-1. Receive request with transactionId
-2. Start database transaction (BEGIN)
-3. Check if transactionId exists (SELECT FOR UPDATE)
-4a. If NOT exists → Insert new transaction
-4b. If EXISTS → Return existing transaction
-5. Commit transaction (COMMIT)
-```
-
-## Project Structure
+The project follows a **Layered Architecture** pattern with clear separation of concerns:
 
 ```
-src/
-├── controllers/          # Presentation Layer
-│   └── transactions.controller.ts
-├── services/             # Application Layer
-│   └── transactions.service.ts
-├── repositories/         # Infrastructure Layer
-│   └── transactions.repository.ts
-├── entities/            # Domain Layer
-│   └── transaction.entity.ts
-├── dto/                 # Data Transfer Objects
-│   ├── create-transaction.dto.ts
-│   └── query-transactions.dto.ts
-├── middleware/          # Custom middlewares
-│   ├── error-handler.middleware.ts
-│   └── logger.middleware.ts
-├── config/             # Configuration
-│   ├── database.config.ts
-│   └── logger.config.ts
-└── main.ts            # Entry point
+┌─────────────────────────────────────┐
+│  Presentation Layer (Controllers)    │ ← HTTP requests/responses
+├─────────────────────────────────────┤
+│  Application Layer (Services)       │ ← Business logic & orchestration
+├─────────────────────────────────────┤
+│  Domain Layer (Entities)            │ ← Domain models & types
+├─────────────────────────────────────┤
+│  Infrastructure Layer (Repositories) │ ← Data access & persistence
+└─────────────────────────────────────┘
 ```
 
-## Environment Variables
+**Benefits:**
+- **Testability**: Each layer can be tested independently
+- **Maintainability**: Clear boundaries make code easier to understand and modify
+- **Scalability**: Easy to add caching, queues, or other infrastructure without touching business logic
+- **Flexibility**: Can swap database implementations without affecting services
 
-```env
-PORT=3000
-NODE_ENV=development
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=password
-DB_NAME=transactions_db
-LOG_LEVEL=info
+### Patterns Implemented
+
+1. **Repository Pattern**: Abstracts data access, making it easy to mock for testing and swap implementations
+2. **Service Layer Pattern**: Centralizes business logic and ensures idempotency
+3. **DTO Pattern**: Validates input and controls data exposure
+4. **Dependency Injection**: NestJS DI container manages dependencies
+
+### Technology Stack
+
+- **Runtime**: Node.js
+- **Framework**: NestJS (TypeScript-first, modular architecture)
+- **Database**: PostgreSQL (relational, ACID compliance)
+- **Database Access**: Raw SQL with `pg` driver (performance-focused, no ORM overhead)
+- **Queue**: BullMQ (Redis-backed) for async processing
+- **Logging**: Winston with structured JSON logs
+- **Validation**: class-validator for DTO validation
+- **API Docs**: Swagger/OpenAPI
+
+## 🔍 Idempotency Implementation
+
+Idempotency is **critical** for financial transactions. The implementation uses multiple layers:
+
+1. **Database Level**: `UNIQUE INDEX` on `transaction_id` column
+2. **Application Level**: Check for existing transaction before insert
+3. **Concurrency Handling**: `SELECT ... FOR UPDATE` with database transactions
+4. **Race Condition Protection**: Try-catch with duplicate key error handling
+
+```typescript
+// Repository uses FOR UPDATE lock to prevent race conditions
+await client.query('SELECT * FROM transactions WHERE transaction_id = $1 FOR UPDATE', [transactionId]);
 ```
 
-## Testing
+## 📊 Bottlenecks & Production Concerns
+
+### Where Would Be the Bottleneck?
+
+**Primary Bottleneck: Database Write Operations**
+
+1. **Database Connection Pool**: Under high concurrent load, the connection pool can become exhausted
+2. **Write Contention**: Multiple transactions trying to insert simultaneously compete for locks
+3. **Index Maintenance**: The `UNIQUE INDEX` on `transaction_id` needs to be checked on every insert
+4. **Transaction Isolation**: `FOR UPDATE` locks can create contention when checking idempotency
+
+**Secondary Bottlenecks:**
+- **API Request Handling**: Without rate limiting, the API can be overwhelmed
+- **Logging**: Synchronous logging can block the event loop under extreme load
+
+### First Real Problem in Production
+
+**Database Connection Pool Exhaustion**
+
+Under high concurrent load (e.g., 1000+ requests/second), the PostgreSQL connection pool will be exhausted. This leads to:
+
+- Requests timing out waiting for available connections
+- Cascading failures as requests queue up
+- Potential deadlocks when multiple transactions compete for the same `transaction_id`
+
+**Symptoms:**
+- Slow response times
+- `ECONNREFUSED` or connection timeout errors
+- Database connection pool errors in logs
+
+### First Solution to Prioritize
+
+**Implement Queue-Based Processing (BullMQ)**
+
+**Why this first:**
+1. **Decouples API from Database**: API responds immediately, processing happens async
+2. **Natural Rate Limiting**: Queue workers process at controlled rate
+3. **Better Resource Management**: Fewer concurrent database connections needed
+4. **Retry Logic**: Built-in retry mechanism for transient failures
+5. **Monitoring**: Queue metrics provide visibility into processing health
+
+**Implementation:**
+- API endpoint receives transaction → adds to queue → returns 202 Accepted
+- Worker processes transactions from queue at controlled rate
+- Idempotency still enforced at database level
+
+**Alternative Quick Wins:**
+- Increase database connection pool size
+- Add Redis caching for read operations
+- Implement rate limiting at API gateway level
+
+## 💾 Cache Strategy
+
+### Where to Use Cache
+
+**✅ Use Cache For:**
+
+1. **Read Operations** (`GET /transactions`)
+   - Cache frequently accessed transactions by ID
+   - Cache paginated results with TTL (e.g., 5 minutes)
+   - Cache filter combinations (status, type, date ranges)
+   - **Key Pattern**: `transaction:{id}` or `transactions:list:{page}:{limit}:{filters}`
+
+2. **Idempotency Checks**
+   - Cache recent transaction IDs to avoid database lookup
+   - Short TTL (30 seconds) - just enough to handle rapid retries
+   - **Key Pattern**: `transaction:exists:{transactionId}`
+
+3. **Health Check Data**
+   - Cache database connection status
+   - Cache queue metrics
+   - **TTL**: 10-30 seconds
+
+### ❌ Don't Use Cache For:
+
+1. **Write Operations** (`POST /transactions`)
+   - Financial data must be immediately consistent
+   - Cache invalidation complexity not worth the risk
+
+2. **Real-time Transaction Status**
+   - Users need latest status immediately
+   - Cache could show stale data
+
+3. **Critical Financial Data**
+   - Regulatory compliance requires accurate, real-time data
+   - Cache adds risk of showing incorrect balances
+
+**Cache Implementation:**
+- **Redis** for distributed caching
+- **Cache-Aside Pattern**: Application checks cache, falls back to database
+- **Write-Through** for idempotency checks (write to both cache and DB)
+
+## 📈 Observability in Production
+
+### Logging
+
+- **Structured Logging**: Winston with JSON format
+- **Log Levels**: Error, Warn, Info, Debug
+- **Context**: Transaction IDs, user IDs, request IDs in all logs
+- **Log Aggregation**: Send to centralized system (e.g., ELK, Datadog, CloudWatch)
+
+### Metrics
+
+- **Prometheus Metrics**: Request rate, latency, error rate
+- **Custom Metrics**: Transactions processed, queue depth, database connection pool usage
+- **Endpoint**: `/metrics` for Prometheus scraping
+
+### Tracing
+
+- **Request IDs**: Unique ID per request, propagated through all layers
+- **Distributed Tracing**: Use OpenTelemetry for microservices (if applicable)
+- **Database Query Tracing**: Log slow queries (>100ms)
+
+### Health Checks
+
+- **`/health` Endpoint**: Database connectivity, queue connectivity, disk space
+- **`/health/ready`**: Application ready to accept traffic
+- **`/health/live`**: Application is alive (for Kubernetes liveness probe)
+
+### Alerting
+
+- **Error Rate**: Alert if error rate > 1% for 5 minutes
+- **Latency**: Alert if p95 latency > 500ms
+- **Queue Depth**: Alert if queue depth > 1000 jobs
+- **Database Connections**: Alert if connection pool > 80% utilized
+
+## 🔄 When to Use Queue/Messaging
+
+### Use Queue For:
+
+1. **High Volume Processing**
+   - When API receives more requests than can be processed synchronously
+   - **Current Implementation**: BullMQ processes transactions asynchronously
+
+2. **External API Calls**
+   - When calling external payment gateways or webhooks
+   - Prevents blocking the main API thread
+   - Enables retry logic for failed external calls
+
+3. **Batch Processing**
+   - Processing multiple transactions in batches
+   - Scheduled jobs (e.g., daily reconciliation)
+
+4. **Decoupling Services**
+   - When transaction processing needs to trigger other services
+   - Event-driven architecture (e.g., send notification after transaction)
+
+5. **Rate Limiting External APIs**
+   - When external APIs have rate limits
+   - Queue workers can respect rate limits
+
+### Don't Use Queue For:
+
+1. **Simple CRUD Operations**
+   - If processing is fast (<10ms), queue adds unnecessary complexity
+
+2. **Real-time Requirements**
+   - When user needs immediate response (e.g., payment confirmation)
+
+3. **Low Volume**
+   - If traffic is <100 req/min, synchronous processing is simpler
+
+**Current Implementation:**
+- BullMQ with Redis backend
+- Async processing with retry logic
+- Job deduplication using `transactionId` as job ID
+
+## 🧪 Testing Strategy
+
+### Test Coverage
+
+- **Unit Tests**: 99.22% statement coverage
+- **Integration Tests**: API endpoints with real database
+- **E2E Tests**: Full flow from API to database
+- **Load Tests**: k6 scripts for performance testing
+- **Idempotency Tests**: Concurrent requests with same `transactionId`
+
+### Running Tests
 
 ```bash
 # Unit tests
@@ -227,277 +257,173 @@ npm run test:integration
 npm run test:e2e
 
 # All tests
-npm run test
+npm run test:all
 
-# Test coverage
-npm run test:cov
-
-# Load tests (requires k6)
+# Load tests
 npm run test:load
-# Or: k6 run test/load/transactions.load.js
 ```
 
-### Test Structure
-
-- **Unit Tests** (`test/unit/`) - Test individual components in isolation
-- **Integration Tests** (`test/integration/`) - Test API endpoints with real database
-- **E2E Tests** (`test/e2e/`) - Test complete user flows
-- **Load Tests** (`test/load/`) - Performance testing with k6
-
-### Running Tests
-
-Before running tests, make sure you have:
-1. Test database created: `createdb transactions_db_test`
-2. `.env.test` file configured (copy from `.env.test.example`)
-3. Migrations run on test database
-
-## Deployment - DigitalOcean App Platform
+## 🚀 Getting Started
 
 ### Prerequisites
 
-1. **DigitalOcean Account** - Sign up at [digitalocean.com](https://www.digitalocean.com)
-2. **DigitalOcean API Token** - Generate at [cloud.digitalocean.com/account/api/tokens](https://cloud.digitalocean.com/account/api/tokens)
-3. **GitHub Repository** - Code must be in a GitHub repository
-4. **doctl CLI** (optional) - For manual deployments: [docs.digitalocean.com/products/doctl](https://docs.digitalocean.com/products/doctl/)
+- Node.js 18+
+- PostgreSQL 15+
+- Redis (for BullMQ)
+- Docker & Docker Compose (optional)
 
-### Setup Instructions
-
-#### 1. Configure GitHub Secrets
-
-Add the following secrets to your GitHub repository (`Settings > Secrets and variables > Actions`):
-
-- `DIGITALOCEAN_ACCESS_TOKEN` - Your DigitalOcean API token
-- `DIGITALOCEAN_PROJECT_NAME` - Your DigitalOcean project name (e.g., `my-project`)
-- `DIGITALOCEAN_APP_ID` - Your App Platform app ID (get after creating the app)
-- `DIGITALOCEAN_APP_URL` - Your app URL (e.g., `transaction-api-xyz.ondigitalocean.app`)
-
-#### 2. Create App on DigitalOcean App Platform
-
-**Option A: Using DigitalOcean Dashboard**
-
-1. Go to [cloud.digitalocean.com/apps](https://cloud.digitalocean.com/apps)
-2. Click "Create App"
-3. Connect your GitHub repository
-4. Select the repository and branch (`main`)
-5. DigitalOcean will auto-detect the `.do/app.yaml` configuration
-6. Review and create the app
-
-**Option B: Using doctl CLI**
+### Installation
 
 ```bash
-# Install doctl
-brew install doctl  # macOS
-# or download from: https://github.com/digitalocean/doctl/releases
+# Install dependencies
+npm install
 
-# Authenticate
-doctl auth init
+# Setup environment variables
+cp .env.example .env
+# Edit .env with your configuration
 
-# Create app from spec
-doctl apps create --spec .do/app.yaml
+# Run database migrations
+npm run migrate
+
+# Start development server
+npm run start:dev
 ```
 
-#### 3. Configure Databases
-
-The app will automatically create:
-- **PostgreSQL Database** - Managed database cluster
-- **Redis Database** - Managed Redis cluster for BullMQ
-
-Database credentials are automatically injected as environment variables.
-
-#### 4. CI/CD Pipeline
-
-The GitHub Actions workflow (`.github/workflows/deploy.yml`) automatically:
-
-1. **Tests** - Runs unit, integration, and E2E tests on every push/PR
-2. **Builds** - Builds Docker image and pushes to DigitalOcean Container Registry
-3. **Deploys** - Deploys to App Platform when pushing to `main` branch
-
-**Workflow Steps:**
-- ✅ Run tests (unit, integration, E2E)
-- ✅ Run linter
-- ✅ Build Docker image
-- ✅ Push to DigitalOcean Container Registry
-- ✅ Deploy to App Platform (only on `main` branch)
-
-#### 5. Manual Deployment
-
-If you need to deploy manually:
+### Docker Setup
 
 ```bash
-# Update app spec
-doctl apps update <APP_ID> --spec .do/app.yaml
-
-# Create new deployment
-doctl apps create-deployment <APP_ID>
+cd docker
+docker compose up -d
 ```
 
-### Environment Variables
+### API Documentation
 
-The app uses environment variables configured in `.do/app.yaml`. These are automatically set by DigitalOcean App Platform:
+Once running, access Swagger documentation at:
+- **URL**: `http://localhost:3000/api/docs`
 
-- Database connection strings (from managed database)
-- Redis connection strings (from managed Redis)
-- Application settings (NODE_ENV, PORT, LOG_LEVEL, etc.)
+## 📝 API Endpoints
 
-### Monitoring & Logs
+### Create Transaction
+```http
+POST /transactions
+Content-Type: application/json
 
-**View Logs:**
-```bash
-# Using doctl
-doctl apps logs <APP_ID> --type run
-
-# Or in DigitalOcean Dashboard
-# Apps > Your App > Runtime Logs
+{
+  "transactionId": "txn_123456",
+  "amount": 100.50,
+  "currency": "USD",
+  "type": "credit",
+  "metadata": {}
+}
 ```
 
-**Health Checks:**
-- Health check endpoint: `/health`
-- Configured in `.do/app.yaml` with 30s initial delay, 10s interval
-
-**Alerts:**
-- Deployment failures
-- Domain failures
-- Configured in `.do/app.yaml`
-
-### Scaling
-
-The app is configured with:
-- **2 instances** (can be adjusted in `.do/app.yaml`)
-- **Basic XXS** instance size (512MB RAM, 1 vCPU)
-- **Auto-scaling** can be enabled in DigitalOcean dashboard
-
-To scale manually:
-```bash
-doctl apps update <APP_ID> --spec .do/app.yaml
-# Edit instance_count in app.yaml, then update
+### Get Transaction
+```http
+GET /transactions/:id
 ```
 
-### Cost Estimation
-
-**Monthly costs (approximate):**
-- App Platform (2x Basic XXS): ~$12/month
-- PostgreSQL Database (Basic): ~$15/month
-- Redis Database (Basic): ~$15/month
-- **Total: ~$42/month**
-
-*Prices may vary by region and usage*
-
-### Troubleshooting
-
-**Deployment fails:**
-1. Check GitHub Actions logs
-2. Check DigitalOcean App Platform logs
-3. Verify all secrets are set correctly
-4. Ensure `.do/app.yaml` is valid
-
-**Database connection errors:**
-1. Verify database is created and running
-2. Check environment variables are set correctly
-3. Verify database credentials in App Platform dashboard
-
-**Build fails:**
-1. Check Dockerfile builds locally: `docker build -f docker/Dockerfile -t test .`
-2. Verify all dependencies are in `package.json`
-3. Check build logs in GitHub Actions
-
-## Docker
-
-### Build and Run with Docker
-
-```bash
-# Build image
-docker build -f docker/Dockerfile -t transaction-processor-api .
-
-# Run with docker-compose (includes PostgreSQL)
-docker-compose -f docker/docker-compose.yml up -d
-
-# Run only app (requires external database)
-docker run -p 3000:3000 --env-file .env transaction-processor-api
-
-# Stop services
-docker-compose -f docker/docker-compose.yml down
-
-# View logs
-docker-compose -f docker/docker-compose.yml logs -f app
+### List Transactions
+```http
+GET /transactions?page=1&limit=20&status=pending&type=credit
 ```
 
-### Docker Compose Services
+### Health Check
+```http
+GET /health
+```
 
-- **app** - Application server (port 3000)
-- **postgres** - PostgreSQL database (port 5432)
-- **pgadmin** - Database management UI (port 5050) - optional, use profile: `docker-compose -f docker/docker-compose.yml --profile tools up`
+## 🔧 Configuration
 
-### Environment Variables
+Key environment variables:
 
-Docker Compose uses environment variables from `.env` file. Make sure to create it from `.env.example`.
+```env
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=transactions_db
+DB_USER=postgres
+DB_PASSWORD=postgres
 
-## Production Considerations
+# Redis (for BullMQ)
+REDIS_HOST=localhost
+REDIS_PORT=6379
 
-### Bottlenecks Identified:
+# Application
+PORT=3000
+NODE_ENV=development
+```
 
-1. **Database Connection Pool** - Limited by pool size (currently 20)
-2. **Single Database Instance** - No read replicas
-3. **Synchronous Processing** - No queue for high volume
+## 🏛️ Technical Debt (Conscious Decisions)
 
-### First Real Problem in Production:
+### 1. **No Database Migrations Tool**
+- Currently using raw SQL migration files
+- **Why**: Simplicity for this project size
+- **Future**: Consider Prisma Migrate or TypeORM migrations for larger projects
 
-**Database Connection Exhaustion** - Under high concurrent load, the connection pool will be exhausted, causing requests to wait or timeout.
+### 2. **Raw SQL Instead of ORM**
+- Using `pg` driver directly
+- **Why**: Performance and control over queries
+- **Trade-off**: More boilerplate, but better performance
 
-### Priority Solution:
+### 3. **Synchronous Logging**
+- Winston logs synchronously
+- **Why**: Simplicity
+- **Future**: Use async transports or log to queue for high volume
 
-1. **Implement Connection Pooling Optimization**
-   - Increase pool size based on load
-   - Implement connection retry logic
-   - Add connection health checks
+### 4. **No Multi-Tenancy Implementation**
+- Single database for all tenants
+- **Why**: Out of scope for MVP
+- **Future**: Add tenant isolation (schema per tenant or tenant_id column)
 
-2. ~~**Add Rate Limiting**~~ ✅ **IMPLEMENTED**
-   - ✅ Rate limiting with @nestjs/throttler (100 req/min per IP)
-   - ✅ Prevents abuse and protects database from overload
+### 5. **No Event Sourcing**
+- Traditional CRUD approach
+- **Why**: Complexity vs. benefit for current requirements
+- **Future**: Consider for audit trail requirements
 
-3. **Consider Message Queue** (BullMQ/RabbitMQ)
-   - For async processing
-   - Better handling of spikes
-   - Decouple API from processing
+### 6. **Limited Error Recovery**
+- Basic retry logic in queue
+- **Why**: MVP scope
+- **Future**: Dead letter queue, exponential backoff, circuit breakers
 
-## Architecture Decisions
+### 7. **No API Versioning**
+- Single API version
+- **Why**: Early stage, no breaking changes yet
+- **Future**: Add `/v1/` prefix when needed
 
-### Why this organization?
+## 📚 Project Structure
 
-- **Separation of Concerns** - Each layer has a single responsibility
-- **Testability** - Easy to mock repositories for unit tests
-- **Maintainability** - Changes in one layer don't affect others
-- **Scalability** - Can optimize each layer independently
+```
+src/
+├── controllers/       # HTTP request handlers
+├── services/          # Business logic
+├── repositories/      # Data access layer
+├── entities/          # Domain models
+├── dto/              # Data transfer objects
+├── queues/           # Queue management
+├── processors/       # Queue job processors
+├── middleware/       # Express middleware
+├── filters/          # Exception filters
+├── config/           # Configuration modules
+└── utils/            # Utility functions
 
-### Where would you put cache?
+test/
+├── unit/             # Unit tests
+├── integration/       # Integration tests
+├── e2e/              # End-to-end tests
+└── load/             # Load tests (k6)
+```
 
-- **GET /transactions** - Cache paginated results (Redis)
-- **GET /transactions/:id** - Cache individual transactions
-- **NOT cache** - POST /transactions (must be real-time)
+## 🤝 Contributing
 
-### How to ensure observability?
+1. Follow the existing code structure and patterns
+2. Write tests for new features
+3. Ensure all tests pass before committing
+4. Follow TypeScript and ESLint rules
 
-- **Structured Logs** - JSON format with Winston
-- **Request/Response Logging** - Middleware logs all requests
-- **Error Tracking** - Centralized error logging
-- **Metrics** - Add Prometheus metrics (future)
-- **Distributed Tracing** - Add OpenTelemetry (future)
-
-### When to use queue/messaging?
-
-- **High Volume Spikes** - When traffic exceeds database capacity
-- **Async Processing** - When transactions need background processing
-- **Reliability** - When you need guaranteed delivery
-- **Decoupling** - When you want to scale API and processing separately
-
-### Technical Debt:
-
-1. **No Database Migrations Tool** - Using simple SQL files
-2. **No Connection Retry Logic** - Should retry on connection failures
-3. **No Rate Limiting** - Should implement to prevent abuse
-4. **No Caching** - Should add Redis for frequently accessed data
-5. **No Health Checks** - Should add /health endpoint
-6. **No API Documentation** - Should add Swagger/OpenAPI
-
-## License
+## 📄 License
 
 UNLICENSED
+
+---
+
+**Built with ❤️ for reliable financial transaction processing**

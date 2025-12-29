@@ -235,15 +235,21 @@ export const dbPool = new Pool({
 
 **🎯 SOLUÇÃO PRIORITÁRIA #3: Usar Fila (BullMQ) para Escritas**
 
-**Ações:**
-1. `POST /api/transactions` adiciona job na fila
-2. Worker processa em background
-3. API responde imediatamente (202 Accepted)
+**Status atual:**
+- ✅ **Infraestrutura pronta**: Redis configurado no docker-compose.yml
+- ✅ **Dependências instaladas**: @nestjs/bull e bull no package.json
+- ⏳ **Código não implementado**: Queue e Processor não estão sendo usados
+- ⏳ **Controller síncrono**: POST /api/transactions processa diretamente
+
+**Ações para implementar:**
+1. `POST /api/transactions` adiciona job na fila (retorna 202 Accepted)
+2. Worker processa em background (transaction.processor.ts)
+3. API responde imediatamente sem esperar processamento
 
 **Por que terceira prioridade:**
-- ✅ Já implementado (BullMQ configurado)
-- Requer ajustes no fluxo de negócio
-- Benefício: reduz tempo de resposta, mas não resolve problema de conexões
+- Infraestrutura já está preparada (Redis rodando)
+- Requer implementação do código (queue + processor)
+- Benefício: reduz tempo de resposta, mas não resolve problema imediato de conexões
 
 ## 💡 Dívida Técnica Consciente
 

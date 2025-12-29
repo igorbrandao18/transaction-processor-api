@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { TransactionsRepository } from '@repositories/transactions.repository';
 import type { Transaction } from '@entities/transaction.entity';
 import type { CreateTransactionDto } from '@dto/create-transaction.dto';
@@ -11,7 +15,9 @@ export class TransactionsService {
 
   async create(dto: CreateTransactionDto): Promise<Transaction> {
     // Check for idempotency - if transaction with same transactionId exists, return it
-    const existing = await this.repository.findByTransactionId(dto.transactionId);
+    const existing = await this.repository.findByTransactionId(
+      dto.transactionId,
+    );
     if (existing) {
       throw new ConflictException({
         message: 'Transaction with this ID already exists',
@@ -64,11 +70,11 @@ export class TransactionsService {
     };
   }
 
-  async getMetadata(): Promise<{
+  getMetadata(): {
     types: string[];
     statuses: string[];
     currencies: string[];
-  }> {
+  } {
     return {
       types: ['credit', 'debit'],
       statuses: ['pending', 'completed', 'failed'],
@@ -76,4 +82,3 @@ export class TransactionsService {
     };
   }
 }
-

@@ -33,7 +33,7 @@ export class TransactionsRepository {
     }
   }
 
-  async findById(id: string): Promise<Transaction | null> {
+  async findById(id: string): Promise<Transaction | undefined> {
     const client = await dbPool.connect();
     try {
       const result = await client.query<TransactionRow>(
@@ -51,7 +51,9 @@ export class TransactionsRepository {
     }
   }
 
-  async findByTransactionId(transactionId: string): Promise<Transaction | null> {
+  async findByTransactionId(
+    transactionId: string,
+  ): Promise<Transaction | undefined> {
     const client = await dbPool.connect();
     try {
       const result = await client.query<TransactionRow>(
@@ -147,4 +149,3 @@ export class TransactionsRepository {
     };
   }
 }
-

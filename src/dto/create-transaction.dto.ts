@@ -14,7 +14,8 @@ import {
 
 export class CreateTransactionDto {
   @ApiProperty({
-    description: 'Unique transaction identifier (must be unique across the system)',
+    description:
+      'Unique transaction identifier (must be unique across the system)',
     example: 'txn-2024-01-15-abc123',
     minLength: 1,
     maxLength: 255,
@@ -72,4 +73,3 @@ export class CreateTransactionDto {
   @IsOptional()
   metadata?: Record<string, any>;
 }
-

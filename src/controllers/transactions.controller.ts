@@ -8,18 +8,11 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { TransactionsService } from '@services/transactions.service';
 import { CreateTransactionDto } from '@dto/create-transaction.dto';
 import { QueryTransactionsDto } from '@dto/query-transactions.dto';
-import {
-  PaginatedTransactionsResponseDto,
-} from '@dto/pagination-response.dto';
+import { PaginatedTransactionsResponseDto } from '@dto/pagination-response.dto';
 import { Transaction } from '@entities/transaction.entity';
 
 @ApiTags('transactions')
@@ -47,7 +40,9 @@ export class TransactionsController {
     status: 409,
     description: 'Transaction with this ID already exists',
   })
-  async create(@Body() createTransactionDto: CreateTransactionDto): Promise<Transaction> {
+  async create(
+    @Body() createTransactionDto: CreateTransactionDto,
+  ): Promise<Transaction> {
     return this.transactionsService.create(createTransactionDto);
   }
 
@@ -65,7 +60,7 @@ export class TransactionsController {
   async findAll(
     @Query() query: QueryTransactionsDto,
   ): Promise<PaginatedTransactionsResponseDto> {
-    return this.transactionsService.findAll(query);
+    return await this.transactionsService.findAll(query);
   }
 
   @Get('metadata')
@@ -103,13 +98,14 @@ export class TransactionsController {
     statuses: string[];
     currencies: string[];
   }> {
-    return this.transactionsService.getMetadata();
+    return await this.transactionsService.getMetadata();
   }
 
   @Get(':id')
   @ApiOperation({
     summary: 'Get transaction by ID',
-    description: 'Retrieves a single transaction by its unique identifier (UUID).',
+    description:
+      'Retrieves a single transaction by its unique identifier (UUID).',
   })
   @ApiParam({
     name: 'id',
@@ -126,7 +122,6 @@ export class TransactionsController {
     description: 'Transaction not found',
   })
   async findOne(@Param('id') id: string): Promise<Transaction> {
-    return this.transactionsService.findById(id);
+    return await this.transactionsService.findById(id);
   }
 }
-

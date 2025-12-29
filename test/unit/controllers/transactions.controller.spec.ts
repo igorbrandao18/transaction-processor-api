@@ -55,6 +55,7 @@ describe('TransactionsController', () => {
           useValue: {
             addTransaction: jest.fn().mockResolvedValue(undefined),
             getJobStatus: jest.fn(),
+            getQueueStats: jest.fn(),
           },
         },
       ],
@@ -152,6 +153,30 @@ describe('TransactionsController', () => {
       await expect(controller.getQueueStatus('non-existent')).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('getQueueStats', () => {
+    it('should return queue statistics', async () => {
+      const mockStats = {
+        waiting: 0,
+        active: 1,
+        completed: 5,
+        failed: 0,
+        delayed: 0,
+        jobs: {
+          waiting: [],
+          active: [],
+          delayed: [],
+        },
+      };
+
+      jest.spyOn(queue, 'getQueueStats').mockResolvedValue(mockStats);
+
+      const result = await controller.getQueueStats();
+
+      expect(queue.getQueueStats).toHaveBeenCalled();
+      expect(result).toEqual(mockStats);
     });
   });
 });

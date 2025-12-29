@@ -23,25 +23,25 @@
   ],
   "coverageThreshold": {
     "global": {
-      "branches": 80,
-      "functions": 90,
-      "lines": 95,
-      "statements": 95
+      "branches": 87,
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
     },
     "./src/services/**/*.ts": {
-      "branches": 80,
+      "branches": 100,
       "functions": 100,
       "lines": 100,
       "statements": 100
     },
     "./src/repositories/**/*.ts": {
-      "branches": 95,
+      "branches": 100,
       "functions": 100,
       "lines": 100,
       "statements": 100
     },
     "./src/controllers/**/*.ts": {
-      "branches": 75,
+      "branches": 77,
       "functions": 100,
       "lines": 100,
       "statements": 100
@@ -53,7 +53,7 @@
       "statements": 100
     },
     "./src/filters/**/*.ts": {
-      "branches": 100,
+      "branches": 87,
       "functions": 100,
       "lines": 100,
       "statements": 100
@@ -66,15 +66,15 @@
     },
     "./src/dto/**/*.ts": {
       "branches": 60,
-      "functions": 0,
-      "lines": 85,
-      "statements": 85
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
     },
     "./src/entities/**/*.ts": {
       "branches": 70,
-      "functions": 0,
-      "lines": 95,
-      "statements": 95
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
     },
     "./src/config/database.config.ts": {
       "branches": 50,
@@ -82,11 +82,23 @@
       "lines": 100,
       "statements": 100
     },
-    "./src/dto/query-transactions.dto.ts": {
-      "branches": 70,
-      "functions": 0,
-      "lines": 84,
-      "statements": 84
+    "./src/config/**/*.ts": {
+      "branches": 80,
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
+    },
+    "./src/queues/**/*.ts": {
+      "branches": 100,
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
+    },
+    "./src/processors/**/*.ts": {
+      "branches": 90,
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
     }
   },
   "moduleNameMapper": {

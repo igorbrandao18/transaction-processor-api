@@ -238,10 +238,9 @@ Under high concurrent load (e.g., 1000+ requests/second), the PostgreSQL connect
 
 ### Test Coverage
 
-- **Unit Tests**: 99.22% statement coverage
+- **Unit Tests**: 100% statement coverage
 - **Integration Tests**: API endpoints with real database
 - **E2E Tests**: Full flow from API to database
-- **Load Tests**: k6 scripts for performance testing
 - **Idempotency Tests**: Concurrent requests with same `transactionId`
 
 ### Running Tests
@@ -258,9 +257,6 @@ npm run test:e2e
 
 # All tests
 npm run test:all
-
-# Load tests
-npm run test:load
 ```
 
 ## 🚀 Getting Started
@@ -409,8 +405,7 @@ src/
 test/
 ├── unit/             # Unit tests
 ├── integration/       # Integration tests
-├── e2e/              # End-to-end tests
-└── load/             # Load tests (k6)
+└── e2e/              # End-to-end tests
 ```
 
 ## 🤝 Contributing

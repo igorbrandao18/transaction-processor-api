@@ -243,4 +243,74 @@ describe('HttpExceptionFilter', () => {
     expect(callArgs.timestamp >= beforeTime).toBe(true);
     expect(callArgs.timestamp <= afterTime).toBe(true);
   });
+
+  it('should ignore ignored paths with non-404 status codes', () => {
+    mockRequest.path = '/favicon.ico';
+    mockRequest.url = '/favicon.ico';
+    const exception = new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+
+    filter.catch(exception, mockArgumentsHost as ArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  it('should handle error response as string', () => {
+    const exception = new HttpException('String error', HttpStatus.BAD_REQUEST);
+
+    filter.catch(exception, mockArgumentsHost as ArgumentsHost);
+
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      statusCode: HttpStatus.BAD_REQUEST,
+      timestamp: expect.any(String),
+      path: '/transactions',
+      message: 'String error',
+    });
+  });
+
+  it('should handle error response as object', () => {
+    const exception = new HttpException(
+      { error: 'Object error', code: 'ERR001' },
+      HttpStatus.BAD_REQUEST,
+    );
+
+    filter.catch(exception, mockArgumentsHost as ArgumentsHost);
+
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      statusCode: HttpStatus.BAD_REQUEST,
+      timestamp: expect.any(String),
+      path: '/transactions',
+      error: 'Object error',
+      code: 'ERR001',
+    });
+  });
+
+  it('should handle non-Error exception with string message', () => {
+    const exception = 'String exception';
+
+    filter.catch(exception, mockArgumentsHost as ArgumentsHost);
+
+    expect(logger.error).toHaveBeenCalledWith('Exception caught', {
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      error: 'String exception',
+      stack: undefined,
+      path: '/transactions',
+      method: 'GET',
+    });
+  });
+
+  it('should handle Error exception with stack', () => {
+    const exception = new Error('Error with stack');
+    exception.stack = 'Error stack trace';
+
+    filter.catch(exception, mockArgumentsHost as ArgumentsHost);
+
+    expect(logger.error).toHaveBeenCalledWith('Exception caught', {
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      error: 'Error with stack',
+      stack: 'Error stack trace',
+      path: '/transactions',
+      method: 'GET',
+    });
+  });
 });

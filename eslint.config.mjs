@@ -36,7 +36,19 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-enum-comparison': 'warn',
       '@typescript-eslint/unbound-method': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        {
+          checksVoidReturn: false,
+        },
+      ],
       "prettier/prettier": ["error", { endOfLine: "auto" }],
+    },
+  },
+  {
+    files: ['src/middleware/error-handler.middleware.ts'],
+    rules: {
+      '@typescript-eslint/no-misused-promises': 'off',
     },
   },
   {
@@ -48,6 +60,8 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 );

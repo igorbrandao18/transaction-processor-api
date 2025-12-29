@@ -165,5 +165,141 @@ describe('TransactionProcessor', () => {
         }),
       );
     });
+
+    it('should update transaction status to failed when error occurs and transaction exists with PENDING status', async () => {
+      const mockJob = {
+        id: '4',
+        data: mockCreateDto,
+        attemptsMade: 0,
+      } as Job<CreateTransactionDto>;
+
+      const error = new Error('Processing error');
+      jest.spyOn(service, 'create').mockRejectedValue(error);
+      jest
+        .spyOn(service, 'findByTransactionId')
+        .mockResolvedValue(mockTransaction);
+      jest.spyOn(service, 'updateStatus').mockResolvedValue({
+        ...mockTransaction,
+        status: TransactionStatus.FAILED,
+      });
+
+      await expect(processor.handleTransaction(mockJob)).rejects.toThrow(
+        'Processing error',
+      );
+
+      expect(service.findByTransactionId).toHaveBeenCalledWith('test-123');
+      expect(service.updateStatus).toHaveBeenCalledWith(
+        'uuid-123',
+        TransactionStatus.FAILED,
+      );
+    });
+
+    it('should handle updateStatus failure gracefully', async () => {
+      const mockJob = {
+        id: '5',
+        data: mockCreateDto,
+        attemptsMade: 0,
+      } as Job<CreateTransactionDto>;
+
+      const error = new Error('Processing error');
+      const updateError = new Error('Update failed');
+      jest.spyOn(service, 'create').mockRejectedValue(error);
+      jest
+        .spyOn(service, 'findByTransactionId')
+        .mockResolvedValue(mockTransaction);
+      jest.spyOn(service, 'updateStatus').mockRejectedValue(updateError);
+
+      await expect(processor.handleTransaction(mockJob)).rejects.toThrow(
+        'Processing error',
+      );
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Could not update transaction status to failed',
+        expect.objectContaining({
+          transactionId: 'test-123',
+          error: 'Update failed',
+        }),
+      );
+    });
+
+    it('should not update status when transaction exists but status is not PENDING', async () => {
+      const mockJob = {
+        id: '6',
+        data: mockCreateDto,
+        attemptsMade: 0,
+      } as Job<CreateTransactionDto>;
+
+      const error = new Error('Processing error');
+      const completedTransaction = {
+        ...mockTransaction,
+        status: TransactionStatus.COMPLETED,
+      };
+      jest.spyOn(service, 'create').mockRejectedValue(error);
+      jest
+        .spyOn(service, 'findByTransactionId')
+        .mockResolvedValue(completedTransaction);
+
+      await expect(processor.handleTransaction(mockJob)).rejects.toThrow(
+        'Processing error',
+      );
+
+      expect(service.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it('should not update status when error response indicates transaction already exists', async () => {
+      const mockJob = {
+        id: '7',
+        data: mockCreateDto,
+        attemptsMade: 0,
+      } as Job<CreateTransactionDto>;
+
+      const error: any = new Error('Conflict');
+      error.response = { error: 'Transaction already exists' };
+      jest.spyOn(service, 'create').mockRejectedValue(error);
+
+      await expect(processor.handleTransaction(mockJob)).rejects.toThrow(
+        'Conflict',
+      );
+
+      expect(service.findByTransactionId).not.toHaveBeenCalled();
+      expect(service.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it('should handle error without response property', async () => {
+      const mockJob = {
+        id: '8',
+        data: mockCreateDto,
+        attemptsMade: 0,
+      } as Job<CreateTransactionDto>;
+
+      const error = new Error('Processing error');
+      jest.spyOn(service, 'create').mockRejectedValue(error);
+      jest.spyOn(service, 'findByTransactionId').mockResolvedValue(null);
+
+      await expect(processor.handleTransaction(mockJob)).rejects.toThrow(
+        'Processing error',
+      );
+
+      expect(service.findByTransactionId).toHaveBeenCalled();
+    });
+
+    it('should handle error with null response', async () => {
+      const mockJob = {
+        id: '9',
+        data: mockCreateDto,
+        attemptsMade: 0,
+      } as Job<CreateTransactionDto>;
+
+      const error: any = new Error('Processing error');
+      error.response = null;
+      jest.spyOn(service, 'create').mockRejectedValue(error);
+      jest.spyOn(service, 'findByTransactionId').mockResolvedValue(null);
+
+      await expect(processor.handleTransaction(mockJob)).rejects.toThrow(
+        'Processing error',
+      );
+
+      expect(service.findByTransactionId).toHaveBeenCalled();
+    });
   });
 });

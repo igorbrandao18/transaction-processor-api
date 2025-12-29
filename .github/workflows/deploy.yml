@@ -646,6 +646,9 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=10 \
+            -o ConnectTimeout=30 \
             $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' POSTGRES_DEFAULT_DB='$POSTGRES_DEFAULT_DB' bash -s" << 'ENDSSH'
             if docker ps --format '{{.Names}}' | grep -q 'transaction-db'; then
               echo "✅ PostgreSQL container is running"
@@ -707,6 +710,9 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=10 \
+            -o ConnectTimeout=30 \
             $SSH_USER@$SSH_HOST << ENDSSH
             echo "📥 Cloning repository..."
             mkdir -p /tmp
@@ -731,7 +737,7 @@ jobs:
     name: 🚀 Build and Deploy
     runs-on: ubuntu-latest
     needs: [backup, prepare-deployment]
-    timeout-minutes: 30
+    timeout-minutes: 45
     
     steps:
       - name: 💾 Cache apt packages
@@ -757,6 +763,9 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=10 \
+            -o ConnectTimeout=30 \
             $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD='$DB_PASSWORD' bash -s" << 'ENDSSH'
             cd /tmp/transaction-processor-api/docker
             
@@ -814,6 +823,9 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=10 \
+            -o ConnectTimeout=30 \
             $SSH_USER@$SSH_HOST "DB_NAME='$DB_NAME' DB_USER='$DB_USER' POSTGRES_DEFAULT_DB='$POSTGRES_DEFAULT_DB' bash -s" << 'ENDSSH'
             echo "⏳ Waiting for PostgreSQL..."
             timeout=60
@@ -879,6 +891,9 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=10 \
+            -o ConnectTimeout=30 \
             $SSH_USER@$SSH_HOST << 'ENDSSH'
             echo "🔄 Running database migrations..."
             docker exec transaction-api npm run migrate || echo "⚠️ Migrations may have already been applied"
@@ -1003,6 +1018,9 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
+            -o ServerAliveInterval=60 \
+            -o ServerAliveCountMax=10 \
+            -o ConnectTimeout=30 \
             $SSH_USER@$SSH_HOST << 'ENDSSH'
             cd /tmp/transaction-processor-api/docker
             

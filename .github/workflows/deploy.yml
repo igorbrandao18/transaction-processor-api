@@ -772,7 +772,7 @@ jobs:
             docker compose build --pull --progress=plain
             
             echo "🚀 Starting containers..."
-            docker compose up -d
+            docker compose --profile observability up -d
             
             echo "⏳ Waiting for services to initialize..."
             sleep 15

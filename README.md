@@ -297,6 +297,29 @@ docker compose up -d
 Once running, access Swagger documentation at:
 - **URL**: `http://localhost:3000/api/docs`
 
+### Observability Stack (Grafana & Prometheus)
+
+Para acessar Grafana e Prometheus em produção:
+
+- **Grafana**: `https://challenge.brandaodeveloper.com.br/grafana`
+  - Usuário padrão: `admin`
+  - Senha padrão: `admin` (⚠️ altere após o primeiro acesso!)
+  
+- **Prometheus**: `https://challenge.brandaodeveloper.com.br/prometheus`
+
+**Configuração no Servidor:**
+
+1. Adicione as rotas do Nginx conforme descrito em `docker/nginx/README.md`
+2. Inicie os serviços de observabilidade:
+   ```bash
+   cd docker
+   docker compose --profile observability up -d
+   ```
+
+Para desenvolvimento local:
+- **Grafana**: `http://localhost:3001` (usuário: `admin`, senha: `admin`)
+- **Prometheus**: `http://localhost:9090`
+
 ## 📝 API Endpoints
 
 ### Create Transaction

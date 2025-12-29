@@ -4,12 +4,14 @@ API para processamento de transações financeiras desenvolvida com NestJS, Type
 
 ## 🎯 Funcionalidades
 
-- ✅ Receber transações financeiras via API (`POST /api/transactions`)
+- ✅ Receber transações financeiras via API (`POST /api/transactions`) - **Processamento assíncrono com BullMQ**
 - ✅ Persistir transações em banco de dados relacional (PostgreSQL)
 - ✅ Garantir idempotência com controle de concorrência
 - ✅ Consultar transações com paginação e filtros (`GET /api/transactions`)
 - ✅ Obter metadados para formulários (`GET /api/transactions/metadata`)
 - ✅ Buscar transação por ID (`GET /api/transactions/:id`)
+- ✅ Consultar status de job na fila (`GET /api/transactions/queue/:transactionId/status`)
+- ✅ Estatísticas da fila (`GET /api/transactions/queue/stats`)
 
 ## 🏗️ Arquitetura
 

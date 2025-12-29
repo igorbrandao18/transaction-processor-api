@@ -1,34 +1,25 @@
-import { INestApplication } from '@nestjs/common';
-import { SwaggerModule } from '@nestjs/swagger';
-import { HttpExceptionFilter } from '@filters/http-exception.filter';
-import { validationPipeConfig } from '@config/validation.config';
-import {
-  swaggerConfig,
-  swaggerDocumentOptions,
-  swaggerSetupOptions,
-} from '@config/swagger.config';
-import { testConnection } from '@config/database.config';
-import { logger } from '@config/logger.config';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { swaggerConfig, swaggerDocumentOptions, swaggerSetupOptions } from './swagger.config';
 
 export async function configureApp(app: INestApplication): Promise<void> {
-  app.useGlobalPipes(validationPipeConfig);
+  // Set global prefix for all routes
+  app.setGlobalPrefix('api');
 
-  app.useGlobalFilters(new HttpExceptionFilter());
-
-  app.enableCors();
-
-  const document = SwaggerModule.createDocument(
-    app,
-    swaggerConfig,
-    swaggerDocumentOptions,
+  // Setup validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
   );
-  SwaggerModule.setup('api/docs', app, document, swaggerSetupOptions);
 
-  try {
-    await testConnection();
-    logger.info('Database connection established');
-  } catch (error) {
-    logger.error('Failed to connect to database', { error });
-    process.exit(1);
-  }
+  // Setup Swagger documentation
+  const document = SwaggerModule.createDocument(app, swaggerConfig, swaggerDocumentOptions);
+  SwaggerModule.setup('api/docs', app, document, swaggerSetupOptions);
 }
+

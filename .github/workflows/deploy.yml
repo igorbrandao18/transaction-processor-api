@@ -641,15 +641,14 @@ jobs:
             cd /tmp/transaction-processor-api/docker
             
             echo "🛑 Stopping existing containers..."
-            docker compose down -v || true
-            docker container prune -f || true
-            docker volume prune -f || true
+            docker compose down || true
             
-            echo "🔨 Building containers..."
+            echo "🔨 Building containers with cache..."
             export DOCKER_BUILDKIT=1
             export COMPOSE_DOCKER_CLI_BUILD=1
-            docker compose pull || true
-            docker compose build --pull --progress=plain
+            export BUILDKIT_PROGRESS=plain
+            # Build with cache from previous builds
+            docker compose build --progress=plain
             
             echo "🚀 Starting containers..."
             docker compose --profile observability up -d

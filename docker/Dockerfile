@@ -1,12 +1,14 @@
 # Multi-stage build for optimization
 
-# Stage 1: Dependencies
+# Stage 1: Dependencies (production only)
 FROM node:18-alpine AS dependencies
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci --only=production --ignore-scripts && npm cache clean --force
+# Use BuildKit cache mount for npm cache
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --only=production --ignore-scripts
 
 # Stage 2: Build
 FROM node:18-alpine AS build
@@ -14,7 +16,9 @@ WORKDIR /app
 
 # Copy package files first for better caching
 COPY package*.json ./
-RUN npm ci
+# Use BuildKit cache mount for npm cache and node_modules
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Copy application source code
 # In production (CI/CD), app.tar.gz is provided
@@ -34,8 +38,9 @@ COPY tsconfig.json nest-cli.json ./
 COPY src ./src
 COPY migrations ./migrations
 
-# Build TypeScript
-RUN npm run build && echo "Build completed, checking dist..." && ls -la dist/ && test -f dist/src/main.js || (echo "ERROR: dist/src/main.js not found!" && find . -name "main.js" 2>/dev/null && exit 1)
+# Build TypeScript (with npm cache mount for faster builds)
+RUN --mount=type=cache,target=/root/.npm \
+    npm run build && echo "Build completed, checking dist..." && ls -la dist/ && test -f dist/src/main.js || (echo "ERROR: dist/src/main.js not found!" && find . -name "main.js" 2>/dev/null && exit 1)
 
 # Stage 3: Production
 FROM node:18-alpine AS production

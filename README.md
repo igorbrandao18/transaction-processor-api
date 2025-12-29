@@ -121,7 +121,7 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 1. **Processamento assíncrono de transações**
    - **Cenário**: Validações complexas, integrações externas (gateways de pagamento)
    - **Benefício**: API responde rápido, processamento em background
-   - **Status**: ⏳ Infraestrutura pronta (Redis + dependências), código não implementado
+   - **Status**: ✅ Implementado - POST /api/transactions enfileira e retorna 202 Accepted
 
 2. **Envio de notificações**
    - **Cenário**: Email, SMS, webhooks para clientes
@@ -136,7 +136,7 @@ O projeto segue **Layered Architecture** (Arquitetura em Camadas) com separaçã
 4. **Retry automático de falhas**
    - **Cenário**: Integração externa falhou temporariamente
    - **Benefício**: Retry automático com backoff exponencial
-   - **Status**: ⏳ Infraestrutura pronta, código não implementado (seria com BullMQ `attempts` e `backoff`)
+   - **Status**: ✅ Implementado - BullMQ com `attempts: 3` e `backoff: exponential`
 
 **❌ NÃO usaria fila em:**
 
@@ -236,20 +236,22 @@ export const dbPool = new Pool({
 **🎯 SOLUÇÃO PRIORITÁRIA #3: Usar Fila (BullMQ) para Escritas**
 
 **Status atual:**
-- ✅ **Infraestrutura pronta**: Redis configurado no docker-compose.yml
-- ✅ **Dependências instaladas**: @nestjs/bull e bull no package.json
-- ⏳ **Código não implementado**: Queue e Processor não estão sendo usados
-- ⏳ **Controller síncrono**: POST /api/transactions processa diretamente
+- ✅ **Implementado**: BullMQ totalmente funcional
+- ✅ **POST /api/transactions**: Enfileira job e retorna 202 Accepted imediatamente
+- ✅ **Worker em background**: TransactionProcessor processa jobs assincronamente
+- ✅ **Retry automático**: 3 tentativas com backoff exponencial
+- ✅ **Monitoramento**: Endpoints para status e estatísticas da fila
 
-**Ações para implementar:**
-1. `POST /api/transactions` adiciona job na fila (retorna 202 Accepted)
+**Como funciona:**
+1. `POST /api/transactions` adiciona job na fila (retorna 202 Accepted com jobId)
 2. Worker processa em background (transaction.processor.ts)
 3. API responde imediatamente sem esperar processamento
+4. Cliente pode consultar status: `GET /api/transactions/queue/:transactionId/status`
 
 **Por que terceira prioridade:**
-- Infraestrutura já está preparada (Redis rodando)
-- Requer implementação do código (queue + processor)
-- Benefício: reduz tempo de resposta, mas não resolve problema imediato de conexões
+- ✅ Já implementado e funcionando
+- Benefício: reduz tempo de resposta da API, mas não resolve problema imediato de pool de conexões
+- Melhora throughput geral do sistema
 
 ## 💡 Dívida Técnica Consciente
 
@@ -298,7 +300,7 @@ export const dbPool = new Pool({
 - **Language**: TypeScript
 - **Database**: PostgreSQL 15
 - **ORM**: Raw SQL com `pg` (PostgreSQL driver)
-- **Message Queue**: BullMQ (Redis) - ⏳ Infraestrutura pronta, código não implementado
+- **Message Queue**: BullMQ (Redis) - ✅ Implementado e funcionando
 - **Logging**: Winston (JSON structured logs)
 - **Validation**: class-validator
 - **Documentation**: Swagger/OpenAPI
